@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+    <script type="text/javascript" src='js/component/header.js'></script>
+<body>
+        <!-- メニュー -->
+        <script src='js/component/global_nav.js'></script>
+        
+        <!-- <div class="loader">Loading...</div> -->
+        <!-- 中身-->
+        <div id="content">
+            <!-- シミュレーション設定コンテンツ-->
+            <div class="configure-card">
+                <div class="row">
+                    <div class="col s12">
+                      <div class="card blue-grey white">
+                        <div class="card-content grey-text text-darken-3">
+                          <span class="card-title">評価</span>
+                          <p>シミュレーション結果の評価を行います。</p>
+                            <div id='setting_input' class="setting-form">
+                                <!-- <label>シミュレーション開始日時</label><br>
+                                <input type="datetime-local" id="start_time" class="start-time" placeholder="5桁以内で入力"><br>
+                                <label>シミュレーション終了日時</label><br>
+                                <input type="datetime-local" id="finish_time" placeholder="5桁以内で入力"><br> -->
+                                <div class="input-field">
+                                  <select id="result-select-box">
+                                    <option value="" disabled selected>選択してください</option>
+                                  </select>
+                                  <label>シミュレーション結果フォルダ</label>
+                                </div>
+                                <div class="input-field">
+                                  <select id="position-select-box">
+                                    <option value="" disabled selected>選択してください</option>
+                                  </select>
+                                  <label>温度取り位置ファイル</label>
+                                </div>
+                            </div>
+                              <div class="row">
+                                  <a id="import-evaluation-data-button" onclick="importEvaluationData();" class="waves-effect waves-light btn-large blue"><h5>読み込み</h5></a>
+                              </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+              </div>
+            <!-- グラフ出力-->
+            <div class="configure-card">
+              <div class="row">
+                  <div class="col s12">
+                    <div class="card blue-grey white">
+                      <div class="card-content grey-text text-darken-3">
+                        <span class="card-title">差分グラフ出力</span>
+                        <p>選択したファイルのシミュレーション結果と実測値の比較を行います</p>
+                        <div class="row">
+                          <div class="col s12">
+                            <ul class="tabs">
+                              <li class="tab col s3"><a class="active" href="#bems">吸込温度</a></li>
+                              <li class="tab col s3"><a href="#observe">温度取り</a></li>
+                            </ul>
+                          </div>
+                          <div id="bems" class="col s12">BEMS
+                            <ul id="bems-graph-box" class="collapsible expandable">
+                              <li>
+                                <div class="collapsible-header"><i class="material-icons">whatshot</i>レイアウト</div>
+                                <div class="collapsible-body"><span>レイアウトを挿入</span></div>
+                              </li>
+                            </ul>
+                          </div>
+                          <div id="observe" class="col s12">observe
+                            <ul id="observe-graph-box" class="collapsible expandable">
+                              <li>
+                                <div class="collapsible-header"><i class="material-icons">whatshot</i>レイアウト</div>
+                                <div class="collapsible-body"><span>レイアウトを挿入</span></div>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+                <div class="configure-card">
+                  <div class="row">
+                      <div class="col s12">
+                        <div class="card blue-grey white">
+                          <div class="card-content grey-text text-darken-3">
+                            <span class="card-title">誤差の評価</span>
+                            <p>予測値と実測値の誤差の評価を行います。</p><p>※MAEによる評価</p>
+                            <div class="row">
+                              <div class="col s12">
+                                <ul class="tabs">
+                                  <li class="tab col s3"><a class="active" href="#bems_eval">吸込温度</a></li>
+                                  <li class="tab col s3"><a href="#observe_eval">温度センサ</a></li>
+                                  <li class="tab col s3"><a href="#all_eval">全体</a></li>
+                                </ul>
+                              </div>
+                              <div id="bems_eval" class="col s12">
+                              </div>
+                              <div id="observe_eval" class="col s12">
+                              </div>
+                              <div id="all_eval" class="col s12">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+
+<script type="text/javascript" src="js/evaluation.js"></script>
+</body>
+</html>

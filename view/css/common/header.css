@@ -1,0 +1,33 @@
+/****************************************************/
+/* 全体共通CSS                                      */
+/****************************************************/
+
+nav .nav-wrapper i, nav a.sidenav-trigger, nav a.sidenav-trigger i {
+    height: 100px;
+    line-height: 100px;
+}
+
+nav ul a{
+    font-size: 1.2rem;
+}
+
+nav ul li{
+    width: 25%;
+    font-size: 1.2rem;
+    height: 100%;
+}
+
+nav ul:not(.browser-default) {
+    padding-left: 0;
+    list-style-type: none;
+    height: 100%;
+}
+
+nav ul:not(.browser-default) > li {
+    list-style-type: none;
+    height: 50%;
+}
+
+body {
+    background-color: #E9E9E9;
+}

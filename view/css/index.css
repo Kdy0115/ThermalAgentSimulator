@@ -1,0 +1,84 @@
+/****************************************************/
+/* index.htmlコンテンツ内へのCSS                    */
+/****************************************************/
+.configure-card .row{
+    margin-top: 3%;
+    margin-left: 3%;
+    margin-right:3%;
+}
+
+#setting_input input {
+    font-size: 20px;
+}
+
+#setting_input label {
+    font-size: 16px;
+}
+
+p {
+    font-size: 20px;
+}
+
+#layout-input-form input {
+    font-size: 20px;
+}
+#layout-input-form label {
+    font-size: 16px;
+}
+#layout-input-form {
+    margin-top: 5%;
+}
+
+
+.card-content{
+    margin-left: 4%;
+    padding: 36px;
+    margin-right: 4%;
+}
+
+.setting-form{
+    margin-top: 3%;
+    /* margin-right: 8%; */
+    /* margin-left: 8%; */
+}
+
+.preview-setting{
+    margin-top: 5%;
+    margin-left: 3%;
+}
+
+.card-content input{
+    margin-bottom: 5%;
+}
+
+#config_save_button{
+    margin-left: 45%;
+}
+
+#read-layout-button{
+    margin-left: 40%;
+}
+
+#layout-3d{
+    width: 633px;
+    height: 385px;
+}
+
+#one-row{
+    margin-bottom: 1%;
+}
+#second-row{
+    margin-bottom: 1%;
+}
+#three-row{
+    margin-bottom: 1%;
+}
+#four-row{
+    margin-bottom: 1%;
+}
+
+#config_save_button{
+    margin-top: 3%;
+    width: 12.5%;
+    margin-left: 86%;
+}

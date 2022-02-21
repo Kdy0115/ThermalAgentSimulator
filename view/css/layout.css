@@ -1,0 +1,17 @@
+#layout-preview-screen{
+    display: table;
+    width: 100%;    
+}
+
+#layout-preview-3d{
+    display: table-cell;
+    float:left;
+    width: 50%;
+}
+
+#layout-preview-2d{
+    display: table-cell;
+    float:right;
+    width: 50%;
+}
+

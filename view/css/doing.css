@@ -1,0 +1,27 @@
+/* .heat-map-canvas{
+    width: 100px;
+    height: 100px;
+    background-color: #EFF0F1;
+} */
+
+/* .heatmap{
+    position: relative;
+    height: 900px;
+    width: 800px
+} */
+.simulation-control-box{
+    margin-top:3%;
+    margin-left:40%;
+}
+
+.heatmap-canvas{
+    width: 100%;
+    height: 100%;
+}
+
+#progress-bar {
+    margin: 20px;
+    width: 100%;
+    height: 20px;
+    position: relative;
+  }

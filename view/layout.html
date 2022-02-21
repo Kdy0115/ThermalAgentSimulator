@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- ヘッダーコンポーネントの読み込み-->
+<script type="text/javascript" src='js/component/header.js'></script>
+<body class="grey lighten-4">
+    <!-- メニュー -->
+    <script type='text/javascript' src='js/component/global_nav.js'></script>
+    <!-- 中身-->
+    <div id="content">
+        <h1>レイアウト設定</h1>
+        <div id="file-form">
+            レイアウトファイル: <select id="layout-files-select-box"><option value=''>ファイルを選択して下さい</option></select><br>
+            熱源情報ファイル: <select id="source-files-select-box"><option value=''>ファイルを選択して下さい</option></select><br>
+            温度取り位置情報ファイル: <select id="position-files-select-box"><option value=''>ファイルを選択して下さい</option></select><br>
+            <button type="button" id="file-import-button" onclick="importLayoutFiles()">ファイル読み込み</button>
+        </div>
+        <div id='layout-preview-screen'>
+          <div id='layout-preview-3d'>
+            <p class='layout-title'>レイアウト全体像（3D）</P>
+            <div id='layout-3d-box'>
+              <canvas id='layout-3d'></canvas>
+            </div>
+          </div>
+          <div id='layout-preview-2d'>
+            <p id='layout-2d-title' class='layout-title'>レイアウト平面（2D）</p>
+            <div id='layout-2d-box'></div>
+            <div id='point-coordinate'></div>
+          </div>
+        </div>
+    </div>
+
+    <input type="text" class="datepicker">
+
+<!--  <script type="text/javascript" src="js/layout.js"></script> -->
+<!-- <script type="text/javascript" src="js/layout3d.js"></script>-->
+<script type="text/javascript" src="js/layout.js"></script>
+</body>
+</html>
