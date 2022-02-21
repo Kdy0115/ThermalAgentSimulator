@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# simulation
+# シミュレーション関連のファイルのコミット設定
+# 必要に応じてコメントアウトを外す
+config/
+data/
