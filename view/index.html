@@ -8,63 +8,8 @@
     <!-- 中身-->
     <div id="content">
         <!-- シミュレーション設定コンテンツ-->
-        <!--<div class="configure-card">
-            <div class="row">
-                <div class="col s12 m2 l7">
-                <div class="col s12">
-                  <div class="card blue-grey white">
-                    <div class="card-content grey-text text-darken-3">
-                      <span class="card-title">シミュレーション設定</span>
-                      <p>シミュレーション実行時の入出力ファイルの設定を行います</p>
-                        <div id='setting_input' class="setting-form">
-                            <label>シミュレーション開始日時</label><br>
-                            <input type="datetime-local" id="start_time" class="start-time config-input" placeholder="5桁以内で入力"><br>
-                            <label>シミュレーション終了日時</label><br>
-                            <input type="datetime-local" id="finish_time" class="config-input" placeholder="5桁以内で入力"><br>
-                            <label>BEMSファイル（評価用データ）のパスを入力</label><br>
-                            <input type="text" id="bems_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-                            <label>制御計画フォルダのパスを入力</label><br>
-                            <input type="text" id="control_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-                            <label>シミュレーションを行う階のレイアウトファイルパスを入力</label><br>
-                            <input type="text" id="layout_input_folder_path0" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-                            
-                            <label>シミュレーションを行う階のスケルトンファイルパスを入力</label><br>
-                            <input type="text" id="skeleton_layout_input_folder_path0" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-
-                            <div id="skeletom_layout_folder_inputform"></div>
-                                <label>シミュレーションを行う階の熱源情報フォルダのパスを入力</label><br>
-                                <input type="text" id="hot_position_folder_path0" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-                                <div id="hot_position_folder_inputform"></div>
-                                <br><label>出力先フォルダのパスを入力</label><br>
-                                <input type="text" id="output_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-                            </div>
-                        </div>
-                        <div class="config-save">
-                            <div class="row">
-                                <a id="config_save_button" onclick="save_setting();" class="waves-effect waves-light btn-large blue"><h5>保存</h5></a>
-                            </div>
-                            <button type='button' class="" id="config_save_button" onclick="save_setting();">保存</button>
-                        </div>
-                  </div>
-                </div>
-                
-                <div class="col s12 m2 l5">
-                    <div class="card blue-grey white">
-                      <div class="card-content grey-text text-darken-3">
-                        <span class="card-title">現在の設定</span>
-                        <p>現在のファイル設定のプレビューを表示します</p>
-                        <div class="preview-setting">
-                            <div id="output"></div>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-                
-              </div>
-        </div>-->
         <div class="configure-card">
             <div class="row">
-                <!--<div class="col s12 m2 l7">-->
                 <div class="col s12">
                   <div class="card blue-grey white">
                     <div class="card-content grey-text text-darken-3">
@@ -84,49 +29,53 @@
                             <input type="text" id="output_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
                           </div>
                           <div class="col s12 m6 l6">
-                            <label>BEMSファイル（評価用データ）のパスを入力</label><br>
-                            <input type="text" id="bems_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+                            <div class="input-field">
+                              <select id="bems-files-select-box" class="config-input">
+                                <option value="" disabled selected>Choose your option</option>
+                              </select>
+                              <label>BEMSファイル（評価用データ）のパスを入力</label>
+                            </div>
                           </div>
                           <div id="three-row" class="col s12 m6 l6">
-                            <label>制御計画フォルダのパスを入力</label><br>
-                            <input type="text" id="control_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+                            <div class="input-field">
+                              <select id="control-files-select-box" class="config-input">
+                                <option value="" disabled selected>Choose your option</option>
+                              </select>
+                              <label>制御計画フォルダのパスを入力</label>              
+                            </div>            
                           </div>
                           <div class="col s12 m4 l4">
-                            <label>シミュレーションを行う階のレイアウトファイルパスを入力</label><br>
-                            <input type="text" id="layout_input_folder_path0" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+                            <div class="input-field">
+                              <select id="layout-files-select-box" class="config-input">
+                                <option value="" disabled selected>Choose your option</option>
+                              </select>
+                              <label>レイアウトファイルパスを入力</label>                          
+                            </div>
                           </div>
-                          <div class="col s12 m4 l4">
-                            <label>シミュレーションを行う階のスケルトンファイルパスを入力</label><br>
-                            <input type="text" id="skeleton_layout_input_folder_path0" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
+                          <div class="col s12 m4 l4">                          
+                            <label>スケルトンファイルパスを入力</label><br>
+                            <input type="text" id="skeleton_layout_input_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
                           </div>
                           <div id="four-row" class="col s12 m4 l4">
-                            <div id="skeletom_layout_folder_inputform"></div>
+                            <div class="input-field">
+                              <select id="heat-source-files-select-box" class="config-input">
+                                <option value="" disabled selected>Choose your option</option>
+                              </select>
+                              <label>熱源情報フォルダのパスを入力</label>                          
+                            </div>
+                            <!--<div id="skeletom_layout_folder_inputform"></div>
                                 <label>シミュレーションを行う階の熱源情報フォルダのパスを入力</label><br>
                                 <input type="text" id="hot_position_folder_path0" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
-                                <div id="hot_position_folder_inputform"></div>
-                            </div>
+                                <div id="hot_position_folder_inputform"></div>-->
+                          </div>
                         </div>
                         <div class="config-save">
                             <div class="row">
-                                <a id="config_save_button" onclick="save_setting();" class="waves-effect waves-light btn-large blue"><h5>保存</h5></a>
+                                <a id="config_save_button" class="waves-effect waves-light btn-large blue"><h5>保存</h5></a>
                             </div>
-                            <!--<button type='button' class="" id="config_save_button" onclick="save_setting();">保存</button>-->
                         </div>
                   </div>
                 </div>
-                <!--
-                <div class="col s12 m2 l5">
-                    <div class="card blue-grey white">
-                      <div class="card-content grey-text text-darken-3">
-                        <span class="card-title">現在の設定</span>
-                        <p>現在のファイル設定のプレビューを表示します</p>
-                        <div class="preview-setting">
-                            <div id="output"></div>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-                -->
               </div>
         </div>        
         
@@ -141,25 +90,25 @@
                             <p>画像内でクリックしながらカメラ視点を移動できます</p>
                             <div class="layout-form" id="layout-input-form">
                                 <div class="input-field">
-                                    <select id="layout-files-select-box">
+                                    <select id="layout-view-files-select-box">
                                       <option value="" disabled selected>Choose your option</option>
                                     </select>
-                                    <label>温度取りデータ</label>
+                                    <label>レイアウトデータ</label>
                                 </div>
                                 <div class="input-field">
-                                    <select id="source-files-select-box">
+                                    <select id="heat-source-view-files-select-box">
                                       <option value="" disabled selected>Choose your option</option>
                                     </select>
-                                    <label>温度取りデータ</label>
+                                    <label>熱源データ</label>
                                 </div>                                                                
                                 <div class="input-field">
-                                    <select id="position-files-select-box">
+                                    <select id="position-view-files-select-box">
                                       <option value="" disabled selected>Choose your option</option>
                                     </select>
-                                    <label>温度取りデータ</label>
+                                    <label>温度センサ位置データ</label>
                                 </div>
                                 <div class="row">
-                                    <a id="read-layout-button" onclick="importLayoutFiles();" class="waves-effect waves-light btn-large blue"><h5>読み込み</h5></a>
+                                    <a id="read-layout-button" class="waves-effect waves-light btn-large blue"><h5>読み込み</h5></a>
                                 </div>
                             </div>
                             <div id="preview-3d-image">
@@ -189,6 +138,6 @@
         </div>
     </div>
 
-<script type="text/javascript" src="js/setting.js"></script>
+<script type="module" src="js/setting.js"></script>
 </body>
 </html>

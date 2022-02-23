@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+# pylib
 from multiprocessing import process
 from sqlite3 import Date
 import eel
@@ -8,53 +11,29 @@ import sys
 import os
 import json
 import glob
-import statistics
-import re
 from sklearn.metrics import mean_absolute_error,r2_score,mean_squared_error
-
-#import time
 import pandas as pd
 from datetime import datetime as dt
-
+import time
+import subprocess
+import numpy as np
+import seaborn as sns
 
 sys.path.append(os.getcwd())
 
 # utils
 from controllers import error,env,functions
-
-import time
-import subprocess
-
-import numpy as np
-import seaborn as sns
-from controllers import functions
-# from main import main
-
-# BEMS全データパス
-bems_all_data_file_path = 'data/config_data/all/base/all_bems_data5.csv'
-# 温度取り全データパス
-measurement_all_data_file_path = 'data/config_data/observe/all/observe_test.csv'
-
+from inc.server_config.setting import bems_all_data_file_path, measurement_all_data_file_path
+from inc.server_config import setting
+from inc.server_config.server_class import EvaluationController, CommonMethod
 
 global json_all_data
-# ユーザー定義ファイル
-# import main
 
-process_arr = []    
+process_arr = []
+cm = CommonMethod()
+
+# Web表示用ルーティング初期設定
 eel.init('view',allowed_extensions=['.js','.html','.css'])
-
-
-
-@eel.expose
-def test():
-    print('接続済み')
-
-
-
-@eel.expose
-def on_button_clicked():
-    print("Button clicked[Python]")
-    eel.showAlert("Button clicked!")
 
 
 #################################################################################
@@ -81,6 +60,20 @@ def config_import():
     config_layout     = config_ini["LAYOUT"]
 
     return config_simulation["start_time"], config_simulation['end_time'], config_bems['bems_file_path'], config_control['control_file_path'], config_layout['lyaout_floor_file_path'], config_layout['skeleton_file_path'], config_layout['heat_source_file_path'], config_simulation['output_folder_path']
+
+@eel.expose
+def render_all_input_dir():
+    """ 設定ファイルに使用する全てのフォルダ内容を返す関数
+
+    Returns:
+        (list): 各ファイルパスを格納したリスト
+    """    
+    init_bems_all_files     = cm.get_all_files_from_dir(setting.init_bems_data_dir_path,'csv')
+    control_all_dirs        = cm.get_all_dirs_from_dir(setting.control_data_dir_path)
+    layout_all_files        = cm.get_all_files_from_dir(setting.layout_data_dir_path,'json')
+    heat_source_all_files   = cm.get_all_files_from_dir(setting.heat_source_data_dir_path,'json')
+    
+    return init_bems_all_files, control_all_dirs, layout_all_files, heat_source_all_files
 
 
 @eel.expose
@@ -117,7 +110,38 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
         # 指定したconfigファイルを書き込み
         config_ini.write(configfile,True)
     
+#################################################################################
+# レイアウト描画用サーバー側プログラム                                          #
+#################################################################################
+@eel.expose
+def import_layout_files(*args):
+    """ レイアウト関連ファイルの読み込みを行いJSに返す関数
+
+        args:
+            args[0] [str]: レイアウトファイルパス
+            args[1] [str]: 熱源情報ファイルパス
+            args[2] [str]: 温度取り位置情報ファイルパス
+            
+        Returns:
+            data_layout [dict]          : レイアウトデータ
+            data_source [dict]          : 熱源情報データ
+            data_observe_position [dict]: 温度取り位置情報データ
+    """
+    data_layout           = cm.import_json_file(args[0])
+    data_source           = cm.import_json_file(args[1])
+    data_position_observe = cm.import_json_file(args[2])
     
+    return (data_layout,data_source,data_position_observe)
+
+
+
+@eel.expose
+def render_layout_dir():
+    layout_files            = cm.get_all_files_from_dir(setting.layout_data_dir_path,'json')
+    heat_source_files       = cm.get_all_files_from_dir(setting.heat_source_data_dir_path,'json')
+    sensor_position_files   = cm.get_all_files_from_dir(setting.temp_sensor_position_dir_path,'json')
+
+    return [layout_files, heat_source_files, sensor_position_files]    
     
 #################################################################################
 # シミュレーション実行用サーバー側プログラム                                    #
@@ -125,28 +149,31 @@ def configure_save(start_time,end_time,bems_file_path,control_file_path,lyaout_f
 
 @eel.expose
 def start_simulation():
-    print("シミュレーションを実行します")
-    cmd = "python main.py"      # シェル実行のコマンド
-    p = subprocess.Popen(cmd)
-    process_arr.append(p)
+    """ シミュレーションをサブプロセスで実行する関数
+    """    
     
-    # thread1 = threading.Thread(target=main)
-    # thread1.start()
+    print("シミュレーションを実行します")
+    # シェル実行のコマンド
+    cmd = setting.cmd
+    # Webとのソケット通信を持続するためサブプロセスで実行する      
+    p = subprocess.Popen(cmd)
+    # 実行時のプロセスを保存しておく
+    process_arr.append(p)
 
 @eel.expose
 def stop_simulation():
+    # 実行した全てのサブプロセスを強制終了する
     for process in process_arr:
         process.kill()
     print('シミュレーションを停止しました')
-        
-
-@eel.expose
-def prepare_simulation():
-    thread1 = threading.Thread(target=simulation)
-    thread1.start()
     
 @eel.expose
 def import_log_file():
+    """ シミュレーションの進捗状況を確認するためのログファイルを取得する関数
+
+    Returns:
+        (int): 進捗度[%]
+    """    
     config_ini = configparser.ConfigParser()
     config_ini.read('config/config.ini', encoding='utf-8')
     file_path = config_ini["SIMULATION"]["output_folder_path"] + "log/progress.txt"
@@ -156,35 +183,13 @@ def import_log_file():
     
     return int(data[-2])
 
-@eel.expose
-def render_dir():
-    path = 'out'
-    files = os.listdir(path)
-    files_dir = [f for f in files if os.path.isdir(os.path.join(path, f))]
-
-    return files_dir
-
-@eel.expose
-def render_floors(dir):
-    path = 'out/{}/'.format(dir)
-    files = os.listdir(path)
-    floors = []
-    for i in files:
-        if '.json' in i:
-            floors.append(i)
-    return floors
-
 
 @eel.expose
 def open_json(path):
     print(path)
     global json_all_data
     path += 'result5.json'
-
-    #path = 'out/test_result.json'
-
-    json_open = open(path, 'r')
-    json_all_data = json.load(json_open)
+    json_all_data = cm.import_json_file(path)
 
 #################################################################################
 # ヒートマップ用関数                                                            #
@@ -419,222 +424,6 @@ def data_evaluation(out_file,observe_file,simulation_file,position,observe_flag,
 #################################################################################
 # シミュレーション結果評価用プログラム                                          #
 #################################################################################
-class EvaluationController():
-    """ 評価用データを作成するメソッドを定義した操作クラス
-        ＊BEMSデータ評価用の操作メソッド
-        ＊温度取りデータ評価用の操作メソッド
-    """    
-    def __init__(self):
-        # BEMSデータと温度取りデータをプール場所から取得
-        self.df_bems = pd.read_csv(bems_all_data_file_path,encoding="shift-jis")
-        self.df_measure = pd.read_csv(measurement_all_data_file_path,encoding="shift-jis")
-        time_arr = list(self.df_measure["時間"].values)
-        new_time_arr = []
-        self.all_predict_data = []
-        self.all_correct_data = []
-        
-        for i in time_arr:
-            split_time = [int(j) for j in re.split(r'[/\s:]',i)]
-            new_time = dt(split_time[0],split_time[1],split_time[2],split_time[3],split_time[4])
-            new_time_arr.append(str(new_time))
-            
-        self.df_measure['時間'] = new_time_arr
-        self.df_measure = self.df_measure.fillna(-1)
-            
-            
-    
-    def _rename_columns(self, df):
-        df_new_columns = ["時間"]
-        setting_columns = []
-        columns = []
-        for i in df.columns:
-            # 吸込温度のみを抽出
-            if "吸込温度" in i:
-                df_new_columns.append(i+"_予測")
-                columns.append(i)
-            # 設定温度のみを抽出
-            elif "設定温度" in i:
-                setting_columns.append(i)
-
-        return df_new_columns,columns,setting_columns
-    
-    def create_inahalation_temp_evaluation(self, df_simulation):
-        """ BEMSにおける吸い込み温度で評価用データを作成するメソッド
-
-        Args:
-            df_simulation [DataFrame]: シミュレーションの予測結果が格納されたDataFrame型のデータ
-
-        Returns:
-            inhalation_evaluation_data [dict]: JS描画用誠整形したファイルデータ
-        """        
-        floor = "5"
-        time = df_simulation.iloc[0]['時間']
-        df_time = dt.strptime(time, '%Y-%m-%d %H:%M:%S')
-        df_simulation.columns,extract_columns,setting_columns = self._rename_columns(self.df_bems)
-        df_merge = pd.merge(self.df_bems, df_simulation, on="時間", how="right")
-        try:
-            df_merge['外気温'] = self.df_bems['外気温'].values
-        except ValueError:
-            df_merge['外気温'] = 0
-            
-        inhalation_evaluation_data = {
-            'time': list(df_merge['時間'].values),
-            'temp':[]
-        }
-        
-        df_mae_evaluation = pd.DataFrame()
-        all_data_arr = []
-        
-        inhalation_all_predict_data = []
-        inhalation_all_correct_data = []
-        
-        accuracy_arr = []
-        
-        
-        for one in extract_columns:
-            one_data_dict = {}
-            one_id_temp_data = {}
-            one_id_temp_data['id'] = one
-            predict = list(df_merge[one+"_予測"].values)
-            correct = list(df_merge[one].values)
-            self.all_predict_data.extend(predict)
-            self.all_correct_data.extend(correct)
-            inhalation_all_predict_data.extend(predict)
-            inhalation_all_correct_data.extend(correct)
-            
-            one_id_temp_data['data_p'] = list(df_merge[one+"_予測"].values)
-            one_id_temp_data['data_m'] = list(df_merge[one].values)
-            one_data_dict['id'] = one
-            one_data_dict['mae']  = mean_absolute_error(correct, predict)
-            one_data_dict['rmse'] = np.sqrt(mean_squared_error(correct, predict))
-            one_data_dict['r']    = r2_score(correct, predict)
-            accuracy_arr.append(one_data_dict)
-            inhalation_evaluation_data['temp'].append(one_id_temp_data)
-            df_mae_evaluation[one+'差分'] = (df_merge[one+'_予測'] - df_merge[one]).abs()
-            all_data_arr.extend((df_merge[one+'_予測'] - df_merge[one]).abs())
-            
-        # inhalation_mae_result = df_mae_evaluation.describe().to_dict()
-        # mean = statistics.mean(all_data_arr)
-        # std  = statistics.pstdev(all_data_arr)
-        # all_inhalation_mae_result = [mean,std]
-        mae  = mean_absolute_error(inhalation_all_correct_data,inhalation_all_predict_data)
-        rmse = np.sqrt(mean_squared_error(inhalation_all_correct_data,inhalation_all_predict_data))
-        r = r2_score(inhalation_all_correct_data, inhalation_all_predict_data)
-        one_data_dict = {}
-        one_data_dict['mae'] = mae
-        one_data_dict['rmse'] = rmse
-        one_data_dict['r']    = r
-        one_data_dict['id'] = "BEMS全体"
-        accuracy_arr.append(one_data_dict)
-            
-        return [inhalation_evaluation_data, accuracy_arr]
-    
-    def create_measurement_temp_evaluation(self, simulation_json_data, position_file_path):
-        """ 温度取りデータ用の評価データを作成するメソッド
-
-        Args:
-            simulation_json_data (dict): シミュレーションの予測結果のjsonファイルを読み込んだリスト
-            position_file_path (dict): 温度取りの位置座標が記載されたjsonファイルを読み込んだリスト
-        """        
-        # 温度取りデータ self.df_measure
-        config_ini = configparser.ConfigParser()
-        config_ini.read('config/config.ini', encoding='utf-8')
-        config_layout     = config_ini["LAYOUT"]['lyaout_floor_file_path']
-        layout_data = functions.import_json_file(config_layout)
-        
-        find_id_arr = simulation_json_data[0]['agent_list']
-        
-        # 温度取りの座標と一致する空間を取得
-        observe_space_id_arr = []
-        for i in position_file_path:
-            sensor_id,x,y,z = i["id"],i["x"],i["y"],i["z"]
-            if sensor_id != 650:
-                for agent in find_id_arr:
-                    if agent["class"] == "space":
-                        if (agent["x"] == x) and (agent["y"] == y) and (agent["z"] == z):
-                            observe_space_id_arr.append((sensor_id,agent["id"]))        
-                        
-        columns = [str(i[0])+"_予測値" for i in observe_space_id_arr]
-        columns.append("時間")
-        result_df = pd.DataFrame(data=[],columns=columns)
-        
-        base_columns = list(result_df.columns)
-        for per_time_data in simulation_json_data:
-            time = per_time_data["timestamp"]
-            row = [0] * len(base_columns)
-            for agent in per_time_data["agent_list"]:
-                for space in observe_space_id_arr:
-                    if agent["id"] == space[1]:
-                        row[base_columns.index("{}_予測値".format(space[0]))] = agent["temp"]
-            row[-1] = time
-            result_df.loc[len(result_df)] = row        
-            
-        print(result_df)
-        print(self.df_measure)
-        
-        df_merge = pd.merge(result_df,self.df_measure,on="時間",how="left")
-        
-        # print(df_merge)
-        
-        measurement_evaluation_data = {
-            'time': list(df_merge['時間'].values),
-            'temp':[]
-        }
-        
-        df_mae_evaluation = pd.DataFrame()
-        all_data_arr = []
-
-        measurement_all_predict_data = []
-        measurement_all_correct_data = []
-        
-        accuracy_arr = []
-        for one in observe_space_id_arr:
-            one_data_dict = {}
-            one_id_temp_data = {}
-            one_id_temp_data['id'] = str(one[0])
-            predict = list(df_merge[str(one[0])+"_予測値"].values)
-            correct = list(df_merge[str(one[0])+"_実測値"].values)
-            # one_id_temp_data['data_p'] = list(df_merge[str(one[0])+"_予測値"].values)
-            # one_id_temp_data['data_m'] = list(df_merge[str(one[0])+"_実測値"].values)
-            self.all_predict_data.extend(predict)
-            self.all_correct_data.extend(correct)
-            measurement_all_predict_data.extend(predict)
-            measurement_all_correct_data.extend(correct)
-            
-            one_id_temp_data['data_p'] = predict
-            one_id_temp_data['data_m'] = correct
-            one_data_dict['id'] = "温度センサ" + str(one[0])
-            one_data_dict['mae']  = mean_absolute_error(correct, predict)
-            one_data_dict['rmse'] = np.sqrt(mean_squared_error(correct, predict))
-            one_data_dict['r']    = r2_score(correct, predict)
-            accuracy_arr.append(one_data_dict)
-            measurement_evaluation_data['temp'].append(one_id_temp_data)
-            df_mae_evaluation[str(one[0])+'差分'] = (df_merge[str(one[0])+'_予測値'] - df_merge[str(one[0])+'_実測値']).abs()
-            all_data_arr.extend((df_merge[str(one[0])+'_予測値'] - df_merge[str(one[0])+'_実測値']).abs())      
-        
-        mae  = mean_absolute_error(measurement_all_correct_data,measurement_all_predict_data)
-        rmse = np.sqrt(mean_squared_error(measurement_all_correct_data,measurement_all_predict_data))
-        r = r2_score(measurement_all_correct_data, measurement_all_predict_data)
-        one_data_dict = {}
-        one_data_dict['mae'] = mae
-        one_data_dict['rmse'] = rmse
-        one_data_dict['r']    = r
-        one_data_dict['id'] = "温度センサ全体"
-        accuracy_arr.append(one_data_dict)
-        print(accuracy_arr)
-        
-        # print(df_mae_evaluation.describe().to_dict())
-        # mean = statistics.mean(all_data_arr)
-        # std  = statistics.pstdev(all_data_arr)
-        
-        # measurement_mae_result = df_mae_evaluation.describe().fillna(-1).to_dict()
-        # mean = statistics.mean(all_data_arr)
-        # std  = statistics.pstdev(all_data_arr)
-        # all_measurement_mae_result = [mean,std]
-        
-        return [measurement_evaluation_data, accuracy_arr]
-    
-            
 @eel.expose
 def create_evaluation_data(path,pos_file_path):
     """ シミュレーション結果を整形してJSに返す関数
@@ -658,7 +447,7 @@ def create_evaluation_data(path,pos_file_path):
     measurement_position_data = functions.import_json_file(pos_file_path)
     
     
-    evalController = EvaluationController()
+    evalController = EvaluationController(bems_all_data_file_path,measurement_all_data_file_path)
     # 吸い込み側のデータ整形
     inhalation_data = evalController.create_inahalation_temp_evaluation(df_simulation_inhalation)
     # 温度取りデータ整形
@@ -691,63 +480,6 @@ def render_evaluation_dir():
 
     return [out_files_dir,position_files]
     
-
-#################################################################################
-# レイアウト描画用サーバー側プログラム                                          #
-#################################################################################
-
-def convert_data_coordinate_for_js(data):
-    """ JSでのAPI利用時の座標情報に合わせて座標を変換する関数
-    厳密にはy座標が上下入れ替わるのでy = (yの最大値 - 1) - y に変換する
-
-    Args:
-        data (dic): 辞書型のデータが格納されたエージェント集合
-
-    Returns:
-        result_data: 変換後のデータが格納されたエージェント集合
-    """    
-    print(data)
-
-@eel.expose
-def import_layout_files(*args):
-    """ レイアウト関連ファイルの読み込みを行いJSに返す関数
-
-        args:
-            args[0] [str]: レイアウトファイルパス
-            args[1] [str]: 熱源情報ファイルパス
-            args[2] [str]: 温度取り位置情報ファイルパス
-            
-        Returns:
-            data_layout [dict]          : レイアウトデータ
-            data_source [dict]          : 熱源情報データ
-            data_observe_position [dict]: 温度取り位置情報データ
-    """
-    
-    data_layout           = functions.import_json_file(args[0])
-    data_source           = functions.import_json_file(args[1])
-    data_position_observe = functions.import_json_file(args[2])
-    
-    return (data_layout,data_source,data_position_observe)
-
-@eel.expose
-def render_layout_dir():
-    path = 'data/layout/'
-    files = glob.glob("{}*".format(path))
-    layout_files   = []
-    source_files   = []
-    position_files = []
-    for file in files:
-        file = file.replace('\\','/')
-        if "floor" in file:
-            layout_files.append(file)
-        elif "source" in file:
-            source_files.append(file)
-        elif "position" in file:
-            position_files.append(file)
-
-    return [layout_files,source_files,position_files]
-    
-
 
 #################################################################################
 # ヒートマップ編集（村上）                                                      #

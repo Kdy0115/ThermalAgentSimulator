@@ -42,27 +42,21 @@
         </div>
         <div class="configure-card">
             <div class="row">
-                <div class="col s12 m2 l8">
+                <div class="col s12 m2 l7">
                     <div class="card blue-grey white">
                         <div class="card-content grey-text text-darken-3">
                             <span class="card-title">ヒートマップ</span>
                             <p>シミュレーション結果のヒートマップを描画<br>開始/終了時間と高さを指定してください</p>
                             <div class="heatmap-form">
-                                <!--
-                                <label>開始日時</label><br>
-                                <input type="datetime-local" id="start_time" class="start-time" placeholder="5桁以内で入力"><br>
-                                <label>終了日時</label><br>
-                                <input type="datetime-local" id="finish_time" placeholder="5桁以内で入力"><br>
-                                <label>フロア選択</label><br>
-                                <input type="text" id="floor_number" placeholder="5桁以内で入力"><br>
-                                -->
                                 <label>高さ</label><br>
                                 <input type="text" id="heatmap-height" placeholder="5桁以内で入力"><br>                                                
                                 <div class="row">
                                     <a id="print_heatmap" onclick="print_heatmap();" class="waves-effect waves-light btn-large blue"><h5>出力</h5></a>
                                 </div>
                                 <div class="heat-map-canvas">
-                                    <div class="heatmap" id='heatmap' style="position: relative; height: 1000px; width: 1000px;"></div>
+                                    <!--<div class="heatmap" id='heatmap' style="position: relative;"></div>-->
+                                    <!--<div class="heatmap" id='heatmap' style="position: relative; height: 500px; width: 500px;"></div>-->
+                                    <canvas id="heatMap"></canvas>
                                 </div>
                                 <div class="animation-control">
                                     <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
@@ -79,7 +73,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col s12 m2 l4">
+                <div class="col s12 m2 l5">
                     <div class="card blue-grey white">
                         <div class="card-content grey-text text-darken-3">
                             <span class="card-title">グラフ表示</span>
@@ -118,10 +112,8 @@
             </div>
         </div>
     </div>
-<script src="js/heatmap.min.js"></script>
+<!--<script src="js/heatmap.min.js"></script>-->
+<script type="text/javascript" src="js/test.js"></script>
 <script type="text/javascript" src="js/doing.js"></script>
-<!--
-<script type="text/javascript" src="js/test_heatmap.js"></script>
--->
 </body>
 </html>

@@ -16,35 +16,35 @@
 // }
 
 
-function createSelectBox(options,initOption,id){
+function createSelectBox(options, initOption, id) {
     const selectFoodName = document.getElementById(`${id}-select-box`);
     console.log(selectFoodName);
-    options.forEach(function(file){
-      var option = document.createElement('option');
-      option.value = file;
-      option.textContent = file;
-      console.log(file,initOption);
-      if(initOption != "" && file == initOption){
-          option.selected = true;
-      }
-      selectFoodName.appendChild(option);
+    options.forEach(function(file) {
+        var option = document.createElement('option');
+        option.value = file;
+        option.textContent = file;
+        console.log(file, initOption);
+        if (initOption != "" && file == initOption) {
+            option.selected = true;
+        }
+        selectFoodName.appendChild(option);
     });
 }
 
-async function importFirstFileData(){
+async function importFirstFileData() {
     res = await eel.render_evaluation_dir()();
     config_out_data = await eel.config_import()();
-    
+
     simulationResultDir = res[0];
     positionFileDir = res[1];
     console.log(simulationResultDir);
     console.log(positionFileDir);
-    createSelectBox(simulationResultDir,config_out_data[7],"result");
-    createSelectBox(positionFileDir,"","position");
+    createSelectBox(simulationResultDir, config_out_data[7], "result");
+    createSelectBox(positionFileDir, "", "position");
     $('select').formSelect();
 }
 
-$(document).ready(function(){
+$(document).ready(function() {
     $('.tabs').tabs();
     $('.tabs_eval').tabs();
     var elem = document.querySelector('.collapsible.expandable');
@@ -60,10 +60,10 @@ $(document).ready(function(){
 });
 
 
-function createTalbeData(data,type){
-    if(type == 'bems'){
+function createTalbeData(data, type) {
+    if (type == 'bems') {
         outputId = document.getElementById('bems_eval');
-    } else if(type == "observe"){
+    } else if (type == "observe") {
         outputId = document.getElementById('observe_eval');
     } else {
         outputId = document.getElementById('all_eval');
@@ -92,7 +92,7 @@ function createTalbeData(data,type){
     console.log(data);
     // bodyの作成
     var tblBody = document.createElement('tbody');
-    for(var i=0; i<data.length; i++){
+    for (var i = 0; i < data.length; i++) {
         var row = document.createElement("tr");
         var cell = document.createElement("td");
         var cellText = document.createTextNode(data[i]['id']);
@@ -100,33 +100,33 @@ function createTalbeData(data,type){
         row.appendChild(cell);
 
         var cell = document.createElement("td");
-        var cellText = document.createTextNode(data[i]['mae']);
+        var cellText = document.createTextNode(data[i]['mae'].toPrecision(3));
         cell.appendChild(cellText);
         row.appendChild(cell);
 
         var cell = document.createElement("td");
-        var cellText = document.createTextNode(data[i]['rmse']);
+        var cellText = document.createTextNode(data[i]['rmse'].toPrecision(3));
         cell.appendChild(cellText);
         row.appendChild(cell);
         tblBody.appendChild(row);
-      }
+    }
     console.log(tblBody);
     tableElement.appendChild(tblBody);
     outputId.appendChild(tableElement);
 }
 
 
-function createGraph(x,y_data,id){
-  
+function createGraph(x, y_data, id) {
+
     all_data = (y_data.data_p).concat(y_data.data_m);
     maxData = Math.max.apply(null, all_data);
     minData = Math.min.apply(null, all_data);
-  
-    
+
+
     var ctx = document.getElementById(id);
-  
+
     // dataSpan = Math.floor(data_for_graph.length / 10);
-    
+
     var labels = x;
     console.log(labels);
     console.log(y_data.data_p);
@@ -134,28 +134,27 @@ function createGraph(x,y_data,id){
     test_arr = [];
 
     var data = {
-      labels: labels,
-      datasets: [
-          {
-            label: '予測値',
-            data: y_data.data_p,
-            borderColor:'#2196F3',
-            lineTension: 0,
-            fill: false,
-            borderWidth: 3
-        },
-        {
-            label: '実測値',
-            data: y_data.data_m,
-            borderColor:'#26a69a',
-            lineTension: 0,
-            fill: false,
-            borderWidth: 3
-        },
-    ]
+        labels: labels,
+        datasets: [{
+                label: '予測値',
+                data: y_data.data_p,
+                borderColor: '#2196F3',
+                lineTension: 0,
+                fill: false,
+                borderWidth: 3
+            },
+            {
+                label: '実測値',
+                data: y_data.data_m,
+                borderColor: '#26a69a',
+                lineTension: 0,
+                fill: false,
+                borderWidth: 3
+            },
+        ]
     };
-  
-    console.log(minData,maxData);
+
+    console.log(minData, maxData);
     var options = {
         scales: {
             yAxes: [{
@@ -176,21 +175,21 @@ function createGraph(x,y_data,id){
     });
     var elem = document.querySelector('.collapsible.expandable');
     var instance = M.Collapsible.init(elem, {
-      accordion: false
+        accordion: false
     });
     var elem = document.querySelector('.collapsible-observe.expandable');
     var instance = M.Collapsible.init(elem, {
-      accordion: false
+        accordion: false
     });
-  }
+}
 
-  
-function createGraphData(data,id){
+
+function createGraphData(data, id) {
     var ulElement = document.getElementById(`${id}-graph-box`);
     temp_data = data.temp;
     x_data = data.time;
     console.log(temp_data);
-    for(i=0;i<temp_data.length;i++){
+    for (i = 0; i < temp_data.length; i++) {
         var liElement = document.createElement('li');
         var liHeaderElement = document.createElement('div');
         liHeaderElement.className = "collapsible-header";
@@ -199,59 +198,59 @@ function createGraphData(data,id){
         liBodyElement.className = "collapsible-body";
         liCanvasElement = document.createElement('canvas');
         var canvasId = `li-body-${id}-${i}`
-        liCanvasElement.setAttribute( "width" , 1000 );
-        liCanvasElement.setAttribute( "height" , 150 );
+        liCanvasElement.setAttribute("width", 1000);
+        liCanvasElement.setAttribute("height", 150);
         liCanvasElement.id = canvasId;
         liBodyElement.appendChild(liCanvasElement);
         liElement.appendChild(liHeaderElement);
         liElement.appendChild(liBodyElement);
         ulElement.appendChild(liElement);
-        createGraph(x_data,temp_data[i],canvasId);
+        createGraph(x_data, temp_data[i], canvasId);
     }
 
 
 }
 
-function execSimulationInhalationData(result){
+function execSimulationInhalationData(result) {
     var inhalationEvalTempData = result[0];
     var inhalationAccuracyData = result[1];
     // var inhalationMaeAllResultData = result[2];
-    createGraphData(inhalationEvalTempData,'bems');
-    createTalbeData(inhalationAccuracyData,'bems')
+    createGraphData(inhalationEvalTempData, 'bems');
+    createTalbeData(inhalationAccuracyData, 'bems')
 }
 
-function execSimulationMeasurementData(result){
+function execSimulationMeasurementData(result) {
     var observeEvalTempData = result[0];
     var observeAccuracyData = result[1];
     // var observeMaeAllResultData = result[2];
-    createGraphData(observeEvalTempData,'observe');
-    createTalbeData(observeAccuracyData,'observe')
+    createGraphData(observeEvalTempData, 'observe');
+    createTalbeData(observeAccuracyData, 'observe')
 }
 
-function getSelectedValue(id){
+function getSelectedValue(id) {
     // 指定したIDのセレクトボックスを取得し選択中の値を返す関数
     var obj = document.getElementById(id);
     var idx = obj.selectedIndex;
-  
-    return obj.options[idx].value
-  }
 
-async function importEvaluationData(){
+    return obj.options[idx].value
+}
+
+async function importEvaluationData() {
     /* シミュレーション結果評価用フィルをインポートする関数
         ＊BEMSデータ（吸い込み側の評価用）
         ＊温度取りデータ（人の高さでの評価用）
         ＊シミュレーション結果データ（.jsonの実体）とBEMSと同形式のcsvファイル
         ＊レイアウトデータ＋温度取りの位置データ
     */
-   // フォームに入力されたシミュレーション結果フォルダの取得
-   simulationOutputDirPath = getSelectedValue('result-select-box');
-   measurePositonFilePath = getSelectedValue('position-select-box');
-   console.log(simulationOutputDirPath,measurePositonFilePath);
-   res = await eel.create_evaluation_data(simulationOutputDirPath,measurePositonFilePath)();
-   
-   execSimulationInhalationData(res[0]);
-   execSimulationMeasurementData(res[1]);
+    // フォームに入力されたシミュレーション結果フォルダの取得
+    simulationOutputDirPath = getSelectedValue('result-select-box');
+    measurePositonFilePath = getSelectedValue('position-select-box');
+    console.log(simulationOutputDirPath, measurePositonFilePath);
+    res = await eel.create_evaluation_data(simulationOutputDirPath, measurePositonFilePath)();
 
-   createTalbeData(res[2],'all');
+    execSimulationInhalationData(res[0]);
+    execSimulationMeasurementData(res[1]);
+
+    createTalbeData(res[2], 'all');
 
 }
