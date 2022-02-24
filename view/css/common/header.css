@@ -1,17 +1,23 @@
 /****************************************************/
+
+
 /* 全体共通CSS                                      */
+
+
 /****************************************************/
 
-nav .nav-wrapper i, nav a.sidenav-trigger, nav a.sidenav-trigger i {
+nav .nav-wrapper i,
+nav a.sidenav-trigger,
+nav a.sidenav-trigger i {
     height: 100px;
     line-height: 100px;
 }
 
-nav ul a{
+nav ul a {
     font-size: 1.2rem;
 }
 
-nav ul li{
+nav ul li {
     width: 25%;
     font-size: 1.2rem;
     height: 100%;
@@ -23,11 +29,19 @@ nav ul:not(.browser-default) {
     height: 100%;
 }
 
-nav ul:not(.browser-default) > li {
+nav ul:not(.browser-default)>li {
     list-style-type: none;
     height: 50%;
 }
 
 body {
     background-color: #E9E9E9;
+}
+
+#glob-menu-list li a {
+    font-size: 16px;
+}
+
+#footer-description {
+    font-size: 14px;
 }

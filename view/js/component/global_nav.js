@@ -1,8 +1,9 @@
 // グローバルメニューの設定
-INDEXLINK      = 'index.html';
+HOMELINK = 'home.html';
+INDEXLINK = 'index.html';
 SIMULATIONLINK = 'doing.html';
 EVALUATIONLINK = 'evaluation.html';
-LAYOUTLINK     = 'layout.html';
+GITHUBLINK = 'https://github.com/Kdy0115/ThermalAgentSimulator';
 
 // グローバルメニューの内容
 globalMenu = `
@@ -11,13 +12,14 @@ globalMenu = `
   <li><a href="#">ヘルプ</a></li>
 </ul>
 <nav>
-  <div class="nav-wrapper blue">
-    <a href="${INDEXLINK}" class="brand-logo"><strong>BEMS温度シミュレーション</strong></a>
+  <div class="nav-wrapper blue" id='glob-menu-list'>
+    <a href="${HOMELINK}" class="brand-logo"><strong>BEMS温熱環境シミュレータ</strong></a>
     <ul class="right hide-on-med-and-down">
-      <li><a href="${INDEXLINK}"><strong>設定</strong></a></li>
-      <li><a href="${SIMULATIONLINK}"><strong>シミュレーション</strong></a></li>
-      <li><a href="${EVALUATIONLINK}"><strong>評価</strong></a></li>
-      <li><a class="dropdown-trigger" href="#!" data-target="dropdown1"><strong>ドキュメント</strong><i class="material-icons right">arrow_drop_down</i></a></li>
+    <li><a href="${HOMELINK}">Home</a></li>
+      <li><a href="${INDEXLINK}">Settings</a></li>
+      <li><a href="${SIMULATIONLINK}">Simulation</a></li>
+      <li><a href="${EVALUATIONLINK}">Evaluation</a></li>
+      <li><a href="${GITHUBLINK}" target="_blank">Github</a></li>      
     </ul>
   </div>
 </nav>
@@ -25,8 +27,3 @@ globalMenu = `
 `;
 
 document.write(globalMenu);
-
-document.addEventListener('DOMContentLoaded', function() {
-  var elems = document.querySelectorAll('.dropdown-trigger');
-  var instances = M.Dropdown.init(elems);
-});
