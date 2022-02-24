@@ -131,5 +131,7 @@ dmypy.json
 # simulation
 # シミュレーション関連のファイルのコミット設定
 # 必要に応じてコメントアウトを外す
-# config/
-# data/
+config/
+data/
+out/
+eval/
