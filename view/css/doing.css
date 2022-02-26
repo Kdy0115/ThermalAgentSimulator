@@ -33,3 +33,11 @@
     height: 20px;
     position: relative;
 }
+
+#slide-bar-time {
+    margin-top: -2%;
+}
+
+#date-heatmap-text {
+    margin-bottom: -2%;
+}

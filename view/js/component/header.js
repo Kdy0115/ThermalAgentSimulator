@@ -56,11 +56,12 @@ if (currentURL == 'home.html') {
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
         <script src="js/extensions/heatmap.min.js"></script>
-        <script type="text/javascript" src="js/doing.js"></script>
+        
         <link rel="stylesheet" href="css/index.css"/>
         <link rel="stylesheet" href="css/heatmap.css"/>
     </head>
 `;
+    //// <script type="text/javascript" src="js/doing.js"></script>
 } else if (currentURL == 'evaluation.html') {
     headerDefine = `
     <head>

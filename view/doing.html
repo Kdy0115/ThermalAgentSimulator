@@ -27,10 +27,10 @@
                                     </div>
                                     <div class="simulation-control-box">
                                         <div class="col s6">
-                                            <a id="stop_simulation_button" onclick="stop_simulation();" class="disabled waves-effect waves-light btn-large red darken-1"><h5>STOP</h5></a>
+                                            <a id="stop-simulation-button" class="disabled waves-effect waves-light btn-large red darken-1"><h5>STOP</h5></a>
                                         </div>
                                         <div class="col s6">
-                                            <a id="start_simulation_button" onclick="start_simulation();" class="waves-effect waves-light btn-large blue"><h5>START</h5></a>
+                                            <a id="start-simulation-button" class="waves-effect waves-light btn-large blue"><h5>START</h5></a>
                                         </div>
                                     </div>
                                 </div>
@@ -49,25 +49,28 @@
                             <p>シミュレーション結果のヒートマップを描画<br>開始/終了時間と高さを指定してください</p>
                             <div class="heatmap-form">
                                 <label>高さ</label><br>
-                                <input type="text" id="heatmap-height" placeholder="5桁以内で入力"><br>                                                
+                                <input type="text" id="heatmap-height" placeholder="5桁以内で入力"><br>      
+                                <div class="input-field">
+                                    <select id="floor-view-files-select-box">
+                                      <option value="" disabled selected>Choose your option</option>
+                                    </select>
+                                    <label>フロアの選択</label>
+                                </div>                                                                                    
                                 <div class="row">
-                                    <a id="print_heatmap" onclick="print_heatmap();" class="waves-effect waves-light btn-large blue"><h5>出力</h5></a>
+                                    <a id="renderHeatMap" class="waves-effect waves-light btn-large blue"><h5>出力</h5></a>
                                 </div>
+                                <div id="date-heatmap-text" class="row">日付 : </div>
                                 <div class="heat-map-canvas">
                                     <!--<div class="heatmap" id='heatmap' style="position: relative;"></div>-->
-                                    <!--<div class="heatmap" id='heatmap' style="position: relative; height: 500px; width: 500px;"></div>-->
+                                    <!--<div class="heatmap" id='heatmap' style="position: relative; height: 1000px; width: 1000px;"></div>-->
                                     <canvas id="heatMap"></canvas>
                                 </div>
-                                <div class="animation-control">
-                                    <button type='button' id="previous_heatmap" onclick="previous_heatmap();">前へ</button>
-                                    <button type='button' id="next_heatmap" onclick="next_heatmap();">次へ</button>                                
-                                    <button type='button' id="movie_heatmap" onclick="movie_heatmap();">動画として再生</button>
-                                    <input type="range" id="inputSlideBar" min="0" max="100" step="1" onchange="changeSlideBar();">
-                                    <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">skip_previous</i></a>
-                                    <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">play_arrow</i></a>
-                                    <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">forward_5</i></a>
-                                    <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">pause</i></a>
-                                    <a class="btn-floating btn-large waves-effect waves-light blue" onclick="playHeatMap();"><i class="material-icons">replay_5</i></a>
+                                <div class="animation-control">                          
+                                    <input type="range" id="inputSlideBar" min="0" max="100" step="1" value="0">
+                                    <div id="slide-bar-time" class="col s12"></div>
+                                    
+                                    <a id="play-heatmap-button" class="btn-floating btn-large waves-effect waves-light blue"><i class="material-icons">play_arrow</i></a>
+                                    <a id="stop-heatmap-button" class="disabled btn-floating btn-large waves-effect waves-light blue"><i class="material-icons">pause</i></a>
                                 </div>
                             </div>
                         </div>
@@ -114,7 +117,8 @@
     </div>
 <script src='js/component/footer.js'></script>    
 <!--<script src="js/heatmap.min.js"></script>-->
-<script type="text/javascript" src="js/test.js"></script>
-<script type="text/javascript" src="js/doing.js"></script>
+<!--<script type="module" src="js/test.js"></script>-->
+<!--<script type="text/javascript" src="js/doing.js"></script>-->
+<script type="module" src="js/doing.js"></script>
 </body>
 </html>

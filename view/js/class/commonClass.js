@@ -1,10 +1,13 @@
 export default class ControlForm {
-    createSelectBox(fileArray, targetId) {
+    createSelectBox(fileArray, initOption, targetId) {
         const targetElement = document.getElementById(`${targetId}`);
         fileArray.forEach(function(file) {
             var option = document.createElement('option');
             option.value = file;
             option.textContent = file;
+            if (initOption != "" && file == initOption) {
+                option.selected = true;
+            }
             targetElement.appendChild(option);
         });
     }
@@ -24,6 +27,28 @@ export default class ControlForm {
         var idx = obj.selectedIndex;
 
         return obj.options[idx].value
+    }
+
+    renderInitSelectBoxOptions(selectBoxId, options, initOption) {
+        var selectBox = document.getElementById(selectBoxId);
+        options.forEach(function(elem) {
+            var option = document.createElement('option');
+            option.value = elem;
+            option.textContent = elem;
+            if (initOption != "" && elem == initOption) {
+                option.selected = true;
+            }
+            selectBox.appendChild(option);
+        });
+    }
+
+    getElementSpecificCondition(dataArr, option, key) {
+        for (var i = 0; i < dataArr.length; i++) {
+            if (dataArr[i][key] == option) {
+                return dataArr[i];
+            }
+        }
+        return false;
     }
 
 }

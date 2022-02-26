@@ -5,6 +5,7 @@ export default class Control2dLayout {
 
         this.canvas2dLayoutCoordinateId = coordinateElementId;
         this.canvas2dLayoutId = canvas2dId;
+        this.edge = 350;
     }
 
     getCoordinateInCanvas(canvas, sparse) {
@@ -50,19 +51,32 @@ export default class Control2dLayout {
         var global2dFloor = floor;
         this.floor = floor;
         const cs = document.createElement('canvas');
+        // const cs = document.getElementById("2dcanvas");
+        // cs.style.marginLeft = "15%";
         cs.id = this.canvas2dLayoutId;
         const ctx = cs.getContext('2d');
-        const sparse = 20;
+        var sparse = 20;
 
-        var layoutData = data1[0]["layout"][floor];
+        var layoutData = data1["layout"][floor];
+        console.log(layoutData);
         var widthNumber = layoutData[0].length;
         var heightNumber = layoutData.length;
 
         var spaceWidth = widthNumber * sparse;
         var spaceHeight = heightNumber * sparse;
 
-        cs.width = spaceWidth;
-        cs.height = spaceHeight;
+        // cs.width = spaceWidth;
+        // cs.height = spaceHeight;
+        var maxLength;
+        if (widthNumber > heightNumber) {
+            maxLength = widthNumber;
+        } else {
+            maxLength = heightNumber
+        }
+        cs.width = this.edge;
+        cs.height = this.edge;
+
+        sparse = this.edge / maxLength;
 
         var layoutRenderTarget = document.getElementById('layout-2d-box');
         layoutRenderTarget.innerHTML = '';
@@ -70,8 +84,8 @@ export default class Control2dLayout {
 
         this.getCoordinateInCanvas(cs, sparse, floor);
 
-        var heatSourceData = data2[1]["data"];
-        var acAgentData = data1[0]["ac"];
+        var heatSourceData = data2["data"];
+        var acAgentData = data1["ac"];
         var observePositionData = data3;
 
         for (var y = 0; y < heightNumber; y++) {
@@ -80,7 +94,11 @@ export default class Control2dLayout {
                 ctx.strokeRect(x * sparse, y * sparse, sparse, sparse);
                 ctx.strokeStyle = 'black';
                 var acPositionMatch = this.setObjectInCanvas(acAgentData, [x, y, parseInt(floor)], ctx, '#333333', sparse);
-                var observePositionMatch = this.setObjectInCanvas(observePositionData, [x, y, parseInt(floor)], ctx, '#33FF00', sparse);
+                if (observePositionData != null) {
+                    var observePositionMatch = this.setObjectInCanvas(observePositionData, [x, y, parseInt(floor)], ctx, '#33FF00', sparse);
+                } else {
+                    var observePositionMatch = false;
+                }
                 var heatPositonMatch = false;
                 if (observePositionMatch == false) {
                     heatPositonMatch = this.setObjectInCanvas(heatSourceData, [x, y, parseInt(floor)], ctx, '#FFA500', sparse);
@@ -221,10 +239,10 @@ export class Control3dLayout {
         renderer.setSize(window.innerWidth / 2 - 100, window.innerHeight / 2 + 100);
         document.body.appendChild(renderer.domElement);
 
-        var layoutData = data1[0]["layout"];
+        var layoutData = data1["layout"];
 
-        var heatSourceData = data2[1]["data"];
-        var acAgentData = data1[0]["ac"];
+        var heatSourceData = data2["data"];
+        var acAgentData = data1["ac"];
         var observePositionData = data3;
 
         // x方向の幅
@@ -250,7 +268,7 @@ export class Control3dLayout {
                             acFlag = true;
                         }
                     }
-                    if (acFlag == false) {
+                    if (acFlag == false && observePositionData != null) {
                         for (var l = 0; l < observePositionData.length; l++) {
                             if (observePositionData[l].x == i && observePositionData[l].y == j && observePositionData[l].z == k) {
                                 this.setAgentObjects(pos, scene, 'ob', -1);
