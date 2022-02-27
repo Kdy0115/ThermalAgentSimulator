@@ -63,56 +63,59 @@ class DataSet():
         self.init_bems_data           = []
         self.control_data             = []
         self.layout_data              = []
+        self.heat_source_data         = []
 
         # 出力先フォルダの作成
-        functions.create_dir(self.output_folder + "cmp/")
+        # functions.create_dir(self.output_folder + "cmp/")
+        # functions.create_dir(self.output_folder)
 
     def check_env(self):
         """ 非バッチ処理かつマルチプロセスの非対応をチェックするモジュール
         """
         if self.mp == True and self.bach == False:
             sys.exit(error.ENV_ERROR)
-
-    def check_exist_file(self, files: list, file_kind: str):
-        """ 読み込んだファイルが1つ以上含まれているか確認するモジュール
-
-        Args:
-            files (list): 読み込んだきたファイルのリスト
-            file_kind (str): 読み込んだファイルの種別（制御計画, BEMS, レイアウト ...）
-        """        
-        if len(files) < 1:
-            sys.exit("{0}{1}".format(file_kind,error.FILE_NOT_FIND_ERROR))
             
+    def _calc_simulation_steps(self) -> int:
+        """ シミュレーションステップ数を算出するモジュール
 
-    def __setting_floors(self, files: list):
+        Returns:
+            int: 分に変換した総和がシミュレーションステップ数に対応
+        """        
+        time_gap = functions.str_to_datetime(self.simulation_end_time) - functions.str_to_datetime(self.simulation_start_time)
+        return int(time_gap.total_seconds())            
+
+    def _setting_floors(self, files: list):
         """ 制御計画ファイルを基にフロアの階数を決定するモジュール
 
         Args:
             files (list): 制御計画ファイルの名前が格納されたリスト
         """
+        control_file_data_set = []
         floor_arr = []
         for file in files:
-            floor_arr.append(int(file.split(".")[0][-1]))
+            floor = file.split("/")[3].split("floor")[1]
+            floor_arr.append(int(floor))
+            control_file_data_set.append([file,int(floor)])
             
         self.floors = floor_arr
+        return control_file_data_set
         
         
-    def __import_all_control_data(self) -> None:
+    def _import_all_control_data(self) -> None:
         """ 空調制御計画データを読み込むモジュール
         """       
 
         # 制御計画データの読み込み
-        files = glob.glob("{}*.csv".format(self.control_data_folder_path))
-        
-        # 制御計画ファイル存在チェック
-        self.check_exist_file(files, "制御計画")
+        files = glob.glob("{}**/*.csv".format(self.control_data_folder_path),recursive=True)
+        files = [f.replace("\\",'/') for f in files]
+
         # フロアの設定
-        self.__setting_floors(files)
-            
-        for item, floor in zip(files,self.floors):
+        control_file_data_set = self._setting_floors(files)
+        
+        for item in control_file_data_set:
             one_control_data_dic = {}
             append_flag = False
-            f = open(item,'r',encoding=self.encoding)
+            f = open(item[0],'r',encoding=self.encoding)
             data_list = []
             # イテレータで読み込む（エージェントシミュレーションの仕様に合わせる）
             data = csv.DictReader(f)
@@ -135,20 +138,50 @@ class DataSet():
                     f.close()
                     break
                         
-            one_control_data_dic["floor"] = floor
+            one_control_data_dic["floor"] = item[1]
             one_control_data_dic["control_data"]  = iter(data_list)
             
             self.control_data.append(one_control_data_dic)
 
-    def __import_bems_data(self) -> None:
+        # for item, floor in zip(files,self.floors):
+        #     one_control_data_dic = {}
+        #     append_flag = False
+        #     f = open(item,'r',encoding=self.encoding)
+        #     data_list = []
+        #     # イテレータで読み込む（エージェントシミュレーションの仕様に合わせる）
+        #     data = csv.DictReader(f)
+        #     per_time_data = next(data)
+        #     per_time_data["時間"] = functions.to_standard_format(per_time_data["時間"])
+            
+        #     while True:
+        #         if per_time_data["時間"] == self.simulation_start_time:
+        #             append_flag = True
+        #         if append_flag:
+        #             data_list.append(per_time_data)
+        #             if per_time_data["時間"] == self.simulation_end_time:
+        #                 append_flag = False
+        #                 f.close()
+        #                 break
+        #         try:
+        #             per_time_data = next(data)
+        #             per_time_data["時間"] = functions.to_standard_format(per_time_data["時間"])
+        #         except StopIteration:
+        #             f.close()
+        #             break
+                        
+        #     one_control_data_dic["floor"] = floor
+        #     one_control_data_dic["control_data"]  = iter(data_list)
+            
+        #     self.control_data.append(one_control_data_dic)
+
+    def _import_bems_data(self) -> None:
         """ 初期値BEMSデータをインポートしてデータを整形するモジュール
         """
 
         # BEMSのファイルデータをインポート（エンコーディングを指定）
-        try:
-            df = pd.read_csv(self.bems_file_path,encoding=self.encoding)
-        except FileNotFoundError:
-            self.check_exist_file([], "BEMS")
+        
+        df = pd.read_csv(self.bems_file_path,encoding=self.encoding)
+
             
         # 先頭の時間を取得（フォーマットを揃えるため）
         self.start_time = df["時間"][0]
@@ -163,47 +196,49 @@ class DataSet():
         df_format = df_format[(df_format["時間"] >= datetime.datetime(s_year,s_month,s_day,s_hour,s_min,s_sec))
                               &(df_format["時間"] <= datetime.datetime(e_year,e_month,e_day,e_hour,e_min,e_sec))
                               ]
-        
         # 階数ごとにBEMSデータを整形する
         for floor in self.floors:
+            nothing_ac_id = True
             init_bems_data = {}
             df_a_f = df_format.filter(regex='({}f|外気温|時間)'.format(floor),axis=1)
             dfs_dict_arr = []
-            for row in range(len(df_a_f)):
-                dfs_dict_arr.append(dict(df_a_f.iloc[row]))
-            init_bems_data["floor"] = floor
-            init_bems_data["bems_data"] = dfs_dict_arr
-            self.init_bems_data.append(init_bems_data)
+            for column in df_a_f.columns:
+                if "{}f".format(floor) in column:
+                    nothing_ac_id = False
+            if nothing_ac_id == False:                
+                for row in range(len(df_a_f)):
+                    dfs_dict_arr.append(dict(df_a_f.iloc[row]))
+                init_bems_data["floor"] = floor
+                init_bems_data["bems_data"] = dfs_dict_arr
+                self.init_bems_data.append(init_bems_data)
 
-    def import_all_layout_data(self):
+
+    def _import_all_layout_data(self):
         """ レイアウトデータをインポートするモジュール
         """
-        try:
-            f = open(self.laytout_file_path)
-            self.layout_data = json.load(f)
-            f.close()
-        except FileNotFoundError:
-            self.check_exist_file([], "フロアレイアウト")
+        f = open(self.laytout_file_path)
+        json_layout_data = json.load(f)
+        for layout in json_layout_data:
+            one_layout_data = {
+                'floor':layout['floor'],
+                'layout':layout['layout'],
+                'ac':layout['ac']
+            }
+            self.layout_data.append(one_layout_data)
+        f.close()
 
-    def import_heat_source_data(self):
+    def _import_heat_source_data(self):
         """ 熱源データをインポートするモジュール
         """
-        try:
-            f = open(self.heat_source_file_path)
-            self.source_data = json.load(f)
-            f.close()
-        except FileNotFoundError:
-            self.check_exist_file([], "フロア内熱源")
-
-
-    def __calc_simulation_steps(self) -> int:
-        """ シミュレーションステップ数を算出するモジュール
-
-        Returns:
-            int: 分に変換した総和がシミュレーションステップ数に対応
-        """        
-        time_gap = functions.str_to_datetime(self.simulation_end_time) - functions.str_to_datetime(self.simulation_start_time)
-        return int(time_gap.total_seconds())
+        f = open(self.heat_source_file_path)
+        json_heat_source_data = json.load(f)
+        for heat_source in json_heat_source_data:
+            one_heat_source_data = {
+                'floor':heat_source['floor'],
+                'heat_source':heat_source['data']
+            }
+            self.heat_source_data.append(one_heat_source_data)
+        f.close()
         
         
     def integrate_files(self) -> dict:
@@ -215,22 +250,22 @@ class DataSet():
 
         # 最終的にシミュレーション実行ファイルへ返す全てのデータを格納した変数
         post_data = {
-            "simulation_step" :self.__calc_simulation_steps(),
+            "simulation_step" :self._calc_simulation_steps(),
             "simulation_data" :[],
             "output_folder"   :self.output_folder,
         }
 
         # 空調制御計画データの読み込み
-        self.__import_all_control_data()
+        self._import_all_control_data()
         
         # 初期値BEMSデータの読み込み
-        self.__import_bems_data()
+        self._import_bems_data()
         
         # フロアレイアウトデータの読み込み
-        self.import_all_layout_data()
+        self._import_all_layout_data()
         
         # フロア内熱源データの読み込み
-        self.import_heat_source_data()
+        self._import_heat_source_data()
 
         # 制御計画データのフロアごとのデータを確認
         for control in self.control_data:
@@ -239,17 +274,19 @@ class DataSet():
                 # 初期BEMSデータのフロアごとのデータを確認
                 for init_bems in self.init_bems_data:
                     # フロア内の熱源データの確認
-                    for source in self.source_data:
+                    for source in self.heat_source_data:
                         # 各フロアの階層が一致していればシミュレーション実行可能としてシミュレーション実行用設定データを作成
                         if (control["floor"] == layout["floor"]) and (layout["floor"] == init_bems["floor"]) and (init_bems["floor"] == source["floor"]):
                             # 1フロア分のデータをまとめる
                             one_post_data = {
                                 "floor"         : control["floor"],
-                                "init_bems_data": init_bems,
+                                "init_bems_data": init_bems['bems_data'],
                                 "control_data"  : control["control_data"],
                                 "layout_data"   : layout,
-                                "source_data"   : source,
+                                "source_data"   : source['heat_source'],
+                                "output_folder" : self.output_folder + 'floor{}_result/'.format(control["floor"])
                             }
+                            functions.create_dir(one_post_data['output_folder'])
                             # 1フロアデータを配列へ追加
                             post_data["simulation_data"].append(one_post_data)
 
@@ -288,7 +325,7 @@ class DataSet():
              data [array]: シミュレーションから返された結果を格納したデータ
         """        
         
-        def _output_json(key: int,data: dict):
+        def _output_json(key: int,data: dict, output_folder: str):
             """ key（ディレクトリ）とdataを受け取ってJsonファイルを出力するモジュール
 
             Args:
@@ -296,12 +333,12 @@ class DataSet():
                 data [array]: シミュレーション結果の辞書
             """            
             
-            f_json = open('{0}/result{1}.json'.format(self.output_folder,key),'w')
+            f_json = open('{0}/result{1}.json'.format(output_folder,key),'w')
             json.dump(data,f_json,indent=4)
             
             
 
-        def _output_complement_data(key,data: dict):
+        def _output_complement_data(key,data: dict, output_folder: str):
             """ BEMSに合わせた保管用データを作成するモジュール
 
             Args:
@@ -326,7 +363,9 @@ class DataSet():
                 values.append(per_value)
             
             # 整形した保管用データを指定先ディレクトリに書き出す
-            with open('{0}cmp/result{1}.csv'.format(self.output_folder,key), 'w',encoding=self.encoding,newline="") as csv_file:
+            target_dir = '{0}cmp/'.format(output_folder)
+            functions.create_dir(target_dir)
+            with open('{0}result{1}.csv'.format(target_dir,key), 'w',encoding=self.encoding,newline="") as csv_file:
                 fieldnames = columns
                 writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                 writer.writeheader()
@@ -337,6 +376,6 @@ class DataSet():
                     
         # シミュレーションデータのフロアと結果データを渡す
         for result in data:
-            _output_json(result[0],result[1])
-            _output_complement_data(result[0],result[1])
+            _output_json(result[0],result[1],result[2])
+            _output_complement_data(result[0],result[1],result[2])
 

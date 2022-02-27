@@ -9,6 +9,8 @@ var layoutDataSet;
 var sourceDataSet;
 var observeDataSet;
 
+var allLayoutData;
+
 /*****************************************************************************/
 /* 設定フォームの関数                                                        */
 /*****************************************************************************/
@@ -33,7 +35,6 @@ async function initSetting() {
     controlForm.createSelectBox(allFiles[1], res[3], 'control-files-select-box');
     controlForm.createSelectBox(allFiles[2], res[4], 'layout-files-select-box');
     controlForm.createSelectBox(allFiles[3], res[6], 'heat-source-files-select-box');
-    controlForm.createSelectBox(allFiles[4][0], res[8], 'simulation-floor');
 
     document.getElementById('start_time').value = importStartTime;
     document.getElementById('finish_time').value = importEndTime;
@@ -48,7 +49,7 @@ async function initSetting() {
     controlForm.createSelectBox(layoutFiles, res[4], 'layout-view-files-select-box');
     controlForm.createSelectBox(sourceFiles, res[6], 'heat-source-view-files-select-box');
     controlForm.createSelectBox(positionFiles, '', 'position-view-files-select-box');
-    controlForm.createSelectBox(allFiles[4][0], res[8], 'floor-view-files-select-box');
+    //controlForm.createSelectBox(allFiles[4][0], '', 'floor-view-files-select-box');
 
     $(document).ready(function() {
         $('select').formSelect();
@@ -140,49 +141,24 @@ function changeLayer() {
     }
 }
 
-// ファイルを読み込む関数
-async function importFiles() {
-    var layoutFilePath = controlForm.getSelectedValue("layout-view-files-select-box");
-    var sourceFilePath = controlForm.getSelectedValue("heat-source-view-files-select-box");
-    var observePositionFilePath = controlForm.getSelectedValue('position-view-files-select-box');
+function changeFloor() {
     var floor = controlForm.getSelectedValue('floor-view-files-select-box');
+    // layoutDataSet = allLayoutData[0];
+    layoutDataSet = controlForm.getElementSpecificCondition(allLayoutData[0], floor, "floor");
+    // sourceDataSet = allLayoutData[1];
+    sourceDataSet = controlForm.getElementSpecificCondition(allLayoutData[1], floor, "floor");
+    observeDataSet = allLayoutData[2];
 
-    var res = await eel.import_layout_files(layoutFilePath, sourceFilePath, observePositionFilePath)();
-
-    //layoutDataSet = res[0];
-    layoutDataSet = controlForm.getElementSpecificCondition(res[0], floor, "floor");
-    //sourceDataSet = res[1];
-    sourceDataSet = controlForm.getElementSpecificCondition(res[1], floor, "floor");
-    observeDataSet = res[2];
-
-    console.log(sourceDataSet);
-
-    // for (var i = 0; i < layoutDataSet.length; i++) {
-    //     for (var j = 0; j < layoutDataSet[i]['layout'].length; j++) {
-    //         layoutDataSet[i]['layout'][j].reverse();
-    //         var y_max = layoutDataSet[i]['layout'][j].length;
-    //     }
-    // }
     for (var i = 0; i < layoutDataSet['layout'].length; i++) {
         layoutDataSet['layout'][i].reverse();
         var y_max = layoutDataSet['layout'][i].length;
     }
 
-    // for (var i = 0; i < sourceDataSet.length; i++) {
-    //     for (var j = 0; j < sourceDataSet[i]['data'].length; j++) {
-    //         sourceDataSet[i]['data'][j]['y'] = (y_max - 1) - sourceDataSet[i]['data'][j]['y'];
-    //     }
-    // }
     console.log(sourceDataSet);
     for (var i = 0; i < sourceDataSet['data'].length; i++) {
         sourceDataSet['data'][i]['y'] = (y_max - 1) - sourceDataSet['data'][i]['y'];
     }
 
-    // for (var i = 0; i < layoutDataSet.length; i++) {
-    //     for (var j = 0; j < layoutDataSet[i]['ac'].length; j++) {
-    //         layoutDataSet[i]['ac'][j]['y'] = (y_max - 1) - layoutDataSet[i]['ac'][j]['y'];
-    //     }
-    // }
     for (var i = 0; i < layoutDataSet['ac'].length; i++) {
         layoutDataSet['ac'][i]['y'] = (y_max - 1) - layoutDataSet['ac'][i]['y'];
     }
@@ -192,8 +168,55 @@ async function importFiles() {
             observeDataSet[i]['y'] = (y_max - 1) - observeDataSet[i]['y'];
         }
     }
-
-    //control3dLayout.renderFigure3dLayout(res[0], res[1], res[2], -1);
     control3dLayout.renderFigure3dLayout(layoutDataSet, sourceDataSet, observeDataSet, -1);
-    createSelectboxFor2dLayout(res[0]);
+    createSelectboxFor2dLayout(allLayoutData[0]);
+}
+
+// ファイルを読み込む関数
+async function importFiles() {
+    var layoutFilePath = controlForm.getSelectedValue("layout-view-files-select-box");
+    var sourceFilePath = controlForm.getSelectedValue("heat-source-view-files-select-box");
+    var observePositionFilePath = controlForm.getSelectedValue('position-view-files-select-box');
+
+    allLayoutData = await eel.import_layout_files(layoutFilePath, sourceFilePath, observePositionFilePath)();
+
+    var floorArray = new Array();
+    for (var i = 0; i < allLayoutData[0].length; i++) {
+        floorArray.push(allLayoutData[0][i]["floor"]);
+    }
+    var target = document.getElementById('layout-3d-form-floor');
+    var childNodeFlag = target.hasChildNodes();
+    if (childNodeFlag) {
+        target.removeChild(target.lastChild);
+    } else {
+        target.innerHTML = '';
+    }
+
+    const inputField = document.createElement('div');
+    inputField.className = "input-field";
+    var selectBoxFloor = document.createElement('select');
+    selectBoxFloor.id = 'floor-view-files-select-box';
+
+    var option = document.createElement('option');
+    option.value = "";
+    option.selected = true;
+    option.text = 'Choose your option';
+    selectBoxFloor.appendChild(option);
+    for (var i = 0; i < floorArray.length; i++) {
+        var option = document.createElement('option');
+        option.value = floorArray[i];
+        option.textContent = floorArray[i];
+        selectBoxFloor.appendChild(option);
+    }
+    var labelElement = document.createElement('label');
+    labelElement.innerHTML = "フロア";
+    inputField.appendChild(selectBoxFloor);
+    inputField.appendChild(labelElement);
+
+    target.appendChild(inputField);
+
+
+    $('select').formSelect();
+    var selectBoxFloor = document.getElementById('floor-view-files-select-box');
+    selectBoxFloor.addEventListener('change', changeFloor);
 }

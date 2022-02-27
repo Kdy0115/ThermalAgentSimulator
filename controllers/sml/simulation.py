@@ -32,10 +32,14 @@ class SimulationControl():
     """    
 
     def __init__(self,post_data,dataclass):
+
         self.simulation_step = int(post_data["simulation_step"])
+    
         self.models_floor_dic = {}
         self.dataset = post_data["simulation_data"]
         self.output_folder = post_data["output_folder"]
+        self.models_result_floor_output_dic = {}
+
         self.dataclass = dataclass
         
         log_dir = self.output_folder+"log/"
@@ -45,7 +49,7 @@ class SimulationControl():
 
         for data in self.dataset:
             model = HeatModel(
-                data["init_bems_data"]["floor"], 
+                data["floor"], 
                 self.simulation_step, 
                 data["init_bems_data"], 
                 data["control_data"],
@@ -54,14 +58,25 @@ class SimulationControl():
                 self.dataclass.simulation_start_time,
                 self.dataclass.simulation_end_time
             )
-            self.models_floor_dic[data["init_bems_data"]["floor"]] = model
+            self.models_floor_dic[data["floor"]] = model
+            self.models_result_floor_output_dic[data["floor"]] = data["output_folder"]
 
     def create_log(self):
         """ ログファイルを作成するメソッド
         """
         f = open(self.log_file_path, 'w')
+        self.write_log(0)
         f.close()
         
+    def get_log(self):
+        """ ログファイルの現在の状態を取得するメソッド
+        """        
+        f = open(self.log_file_path, 'r')
+        data = (f.read()).split('\n')
+        f.close()
+        
+        return data[-2]
+    
     def write_log(self,progress):
         """ ログファイルを書き込むメソッド
         """        
@@ -116,21 +131,31 @@ class SimulationControl():
         self._str_simulation_state()
         result_arr = []
         n = 0
+        floor_num = len(self.models_floor_dic.keys())
+        stat_progress = 0
+        pre_progress = 0
         for key,model in self.models_floor_dic.items():
+            stat_progress = int(self.get_log())
             for i in tqdm(range(self.simulation_step+1)):
                 if model.terminate:
                     break
                 else:
-                    progress = i/ (self.simulation_step+1) * 100
-                    if int(progress) == int(n):
-                        self.write_log(int(progress))
-                        n += 1
+                    progress = int(((i/(self.simulation_step+1))/floor_num)*100)
+                    # int(((progress + (i/(self.simulation_step+1))) / floor_num)*100)
+                    #int(progress + (i/ (self.simulation_step+1)) * 100)//floor_num
+                    # self.write_log(int(progress))
+                    if progress != pre_progress:
+                        self.write_log(int(progress + stat_progress))
+                    # if int(progress) == int(n):
+                    #     self.write_log(int(progress + stat_progress))
+                    #     n += 1
                     model.step()
                     if (self.dataclass.bach == False) and (i%60 == 0):
                         self.dataclass.per_output_data(key,model.spaces_agents_list[-1],i)
+                    pre_progress = progress
             if self.dataclass.bach == True:
-                result_arr.append((key,model.spaces_agents_list))
-        self.write_log(int(progress)+1)                
+                result_arr.append((key,model.spaces_agents_list,self.models_result_floor_output_dic[key]))
+        self.write_log(100)                
         elapsed_time = time.time() - start
         print("Simulation finished!")
         print("Simulation time:{}".format(int(elapsed_time)) + "[sec]")

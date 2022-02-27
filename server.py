@@ -25,7 +25,7 @@ sys.path.append(os.getcwd())
 # utils
 from controllers import error,env,functions
 from inc.common_setting.setting import BUILDING_ALL_FLOOR_ARR
-from inc.server_config.setting import bems_all_data_file_path, measurement_all_data_file_path
+from inc.server_config.setting import measurement_all_data_file_path
 from inc.server_config import setting
 from inc.server_config.server_class import EvaluationController, CommonMethod
 
@@ -61,7 +61,7 @@ def config_import():
     config_simulation = config_ini["SIMULATION"]
     config_layout     = config_ini["LAYOUT"]
 
-    return config_simulation["start_time"], config_simulation['end_time'], config_bems['bems_file_path'], config_control['control_file_path'], config_layout['lyaout_floor_file_path'], config_layout['skeleton_file_path'], config_layout['heat_source_file_path'], config_simulation['output_folder_path'], config_simulation['floor']
+    return config_simulation["start_time"], config_simulation['end_time'], config_bems['bems_file_path'], config_control['control_file_path'], config_layout['lyaout_floor_file_path'], config_layout['skeleton_file_path'], config_layout['heat_source_file_path'], config_simulation['output_folder_path']
 
 @eel.expose
 def render_all_input_dir():
@@ -188,87 +188,63 @@ def import_log_file():
     
     return int(data[-2])
 
-
-@eel.expose
-def open_json(path):
-    print(path)
-    global json_all_data
-    path += 'result5.json'
-    json_all_data = cm.import_json_file(path)
+@eel.expose()
+def import_output_folder_floor(path):
+    if path == "":
+        config_ini = configparser.ConfigParser()
+        config_ini.read('config/config.ini', encoding='utf-8')
+        file_path = config_ini["SIMULATION"]["output_folder_path"]
+    else:
+        file_path = path
+    files = glob.glob("{}**/result*.json".format(file_path),recursive=True)
+    files = [f.replace("\\",'/') for f in files]
+    floor_arr = []
+    if len(files) > 0:
+        for f in files:
+            floor_arr.append(f.split('/')[3].split('.')[0].replace('result',''))
     
-    return json_all_data
+    return floor_arr
+    
+@eel.expose()
+def return_height_for_heatmap(floor:int):
+    print(floor)
+    config_ini = configparser.ConfigParser()
+    config_ini.read('config/config.ini', encoding='utf-8')
+    file_path = config_ini["LAYOUT"]["lyaout_floor_file_path"]
+    layout_json_data = cm.import_json_file(file_path)
+    for elem in layout_json_data:
+        if elem['floor'] == floor:
+            target_layout_data = elem
+            break
+        
+    return len(target_layout_data["layout"])
+    
+@eel.expose
+def open_simulation_data_json(path:str, floor:int):
+    print(path)
+    # //global json_all_data
+    json_file_path = path + "floor{}_result/".format(floor) + "result{}.json".format(floor)
+    #path += 'result5.json'
+    simulation_json_data = cm.import_json_file(json_file_path)
+    
+    return simulation_json_data
 
 @eel.expose
-def open_layout_json(path):
+def open_layout_json(path:str,floor:int):
     print(path)
     layout_json_data = cm.import_json_file(path)
+    for layout in layout_json_data:
+        if layout["floor"] == floor:
+            target_layout_data = layout
+            break
     
-    return layout_json_data
-
-#################################################################################
-# ヒートマップ用関数                                                            #
-#################################################################################
-@eel.expose
-def import_result_data(number):
-    global json_all_data
-    #start = time.time()
-    #print(path)
-    
-    data = json_all_data
-    #open_time = time.time()-start
-    #print("open_time = ",open_time)
-    #print(data[number]["agent_list"][100]["temp"])
-    data_x = []
-    data_y = []
-    data_z = []
-    data_temp = []
-    #need_data = []
-    start1 = time.time()
-    try:
-        for i in range(len(data[number]["agent_list"])):
-            if data[number]["agent_list"][i]["class"] == "space":
-                data_x.append(data[number]["agent_list"][i]["x"])
-                data_y.append(data[number]["agent_list"][i]["y"])
-                data_z.append(data[number]["agent_list"][i]["z"])
-                data_temp.append(data[number]["agent_list"][i]["temp"])
-                #need_data.append(data[0]["agent_list"][i])
-
-        min_temp,max_temp = min(data_temp),max(data_temp)
-        # sort_time = time.time()-start1
-        # print("sort_time = ",sort_time)
-        return [data_x,data_y,data_z,data_temp,min_temp,max_temp]
-    except IndexError:
-        return []
-
-@eel.expose
-def import_result_data_for_graph(path,x,y,z):
-    global json_all_data
-    
-    data = json_all_data
-    data_temp = []
-    
-    x,y,z = int(x),int(y),int(z)
-    id = 0
-
-    for i in range(len(data[0]["agent_list"])):
-        if data[0]["agent_list"][i]["x"] == x and data[0]["agent_list"][i]["y"] == y and data[0]["agent_list"][i]["z"] == z:
-            id = data[0]["agent_list"][i]["id"]
-
-
-    for i in range(len(data[0]["agent_list"])):
-        for k in range(len(data)):
-            if data[k]["agent_list"][i]["id"] == id:
-                data_temp.append(data[k]["agent_list"][i]["temp"])
-
-    print(data_temp)
-
-    return data_temp,max(data_temp)+0.1,min(data_temp)-0.1
+    return target_layout_data
 
 #################################################################################
 # シミュレーション結果評価用プログラム                                          #
 #################################################################################
 @eel.expose
-def create_evaluation_data(path,pos_file_path):
+def create_evaluation_data(path,pos_file_path,floor):
     """ シミュレーション結果を整形してJSに返す関数
 
     Args:
@@ -281,10 +257,13 @@ def create_evaluation_data(path,pos_file_path):
     print(path)
     
     evaluatoin_result_arr = [[],[],[]]
-    evalController = EvaluationController(bems_all_data_file_path,measurement_all_data_file_path)
+    config_ini = configparser.ConfigParser()
+    config_ini.read('config/config.ini', encoding='utf-8')
+    file_path = config_ini["BEMS"]["bems_file_path"]
+    evalController = EvaluationController(file_path,measurement_all_data_file_path,floor)
     
     # シミュレーション結果各種ファイルパス
-    simulation_inhalation_file_path = path + "cmp/result5.csv"
+    simulation_inhalation_file_path = path + f"floor{floor}_result/cmp/result{floor}.csv"
     df_simulation_inhalation = pd.read_csv(simulation_inhalation_file_path,encoding="shift-jis")
     # 吸い込み側のデータ整形
     inhalation_data = evalController.create_inahalation_temp_evaluation(df_simulation_inhalation)
@@ -292,7 +271,7 @@ def create_evaluation_data(path,pos_file_path):
     
     if pos_file_path != '':
         # シミュレーション結果jsonファイル
-        simulation_measurement_file_path = path + "result5.json"
+        simulation_measurement_file_path = path + f"floor{floor}_result/result{floor}.json"
         simulation_measurement_data = functions.import_json_file(simulation_measurement_file_path)
         # 温度取りデータの位置情報データ
         measurement_position_data = functions.import_json_file(pos_file_path)
@@ -317,16 +296,15 @@ def create_evaluation_data(path,pos_file_path):
 @eel.expose
 def render_evaluation_dir():
     out_path = 'out/'
-    position_file_path = 'data/layout/'
+    position_file_path = 'data/observe/position/'
     out_files = os.listdir(out_path)
     out_files_dir = [out_path+f+"/" for f in out_files if os.path.isdir(os.path.join(out_path, f))]
     
-    files = glob.glob("{}*".format(position_file_path))
+    files = glob.glob("{}*.json".format(position_file_path))
     position_files   = []
     for file in files:
         file = file.replace('\\','/')
-        if "position" in file:
-            position_files.append(file)
+        position_files.append(file)
 
     return [out_files_dir,position_files]
 

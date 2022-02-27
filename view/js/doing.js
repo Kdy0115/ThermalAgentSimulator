@@ -1,9 +1,11 @@
 import TempToColor from "./class/heatControlClass.js";
+import ControlForm from './class/commonClass.js';
 
+var controlForm = new ControlForm();
 var controlHeatMap;
 
-let heatMapButton = document.getElementById('renderHeatMap');
-heatMapButton.addEventListener('click', initRenderHeatMap);
+// let heatMapButton = document.getElementById('renderHeatMap');
+// heatMapButton.addEventListener('click', initRenderHeatMap);
 
 let startSimulationButton = document.getElementById('start-simulation-button');
 startSimulationButton.addEventListener('click', start_simulation);
@@ -34,7 +36,7 @@ var stopFlag = true;
 var simulationStatus = 0;
 var updateHeatmap = false;
 var interval;
-
+var floor;
 const edge = 400;
 
 
@@ -61,11 +63,120 @@ var lastTime;
 var heatmapProcess;
 var exec = false;
 
+var graphIdArray = new Array();
+var graphIndex = 0;
+
+initHeatMapImportFile();
+
+/* 画面読み込み時に実行する関数
+ */
+async function initHeatMapImportFile() {
+    var floorArray = await eel.import_output_folder_floor("")();
+    var heatMapDescription = document.getElementById("heat-map-description");
+    if (floorArray.length < 1) {
+        heatMapDescription.innerHTML = "シミュレーション結果が存在していません。シミュレーションを実行してください。";
+    } else {
+        heatMapDescription.innerHTML = "フロアと高さを選択してください。";
+    }
+
+    var heatMapForm = document.getElementById("heatmap-form");
+    var inputForm = document.createElement("div");
+    inputForm.className = "input-field";
+    var floorSelectBox = document.createElement('select');
+    floorSelectBox.id = "heatmap-floor-select-box";
+    var option = document.createElement('option');
+    option.value = "";
+    option.text = 'Choose your option';
+    option.selected = true;
+    option.disabled = true;
+    floorSelectBox.appendChild(option);
+
+    for (var i = 0; i < floorArray.length; i++) {
+        var option = document.createElement('option');
+        option.value = floorArray[i];
+        option.text = floorArray[i];
+        floorSelectBox.appendChild(option);
+    }
+
+    var labelElement = document.createElement('label');
+    labelElement.innerHTML = "フロア";
+
+    floorSelectBox.appendChild(labelElement);
+    inputForm.appendChild(floorSelectBox);
+    heatMapForm.appendChild(inputForm);
+
+    floorSelectBox.addEventListener('change', changeHeatMapFloor);
+
+    $('select').formSelect();
+}
+
+async function changeHeatMapFloor() {
+    floor = parseInt(controlForm.getSelectedValue("heatmap-floor-select-box"));
+    var heightNumber = await eel.return_height_for_heatmap(floor)();
+    console.log(heightNumber);
+    var heatMapForm = document.getElementById("heatmap-form");
+    var childElementNum = heatMapForm.childElementCount;
+    if (childElementNum > 1) {
+        heatMapForm.removeChild(heatMapForm.lastChild);
+    }
+    var inputForm = document.createElement("div");
+    inputForm.className = "input-field";
+    var heightSelectBox = document.createElement('select');
+    heightSelectBox.id = "heatmap-height-select-box";
+    var option = document.createElement('option');
+    option.value = "";
+    option.text = 'Choose your option';
+    option.selected = true;
+    option.disabled = true;
+    heightSelectBox.appendChild(option);
+
+    for (var i = 0; i < heightNumber; i++) {
+        var option = document.createElement('option');
+        option.value = i;
+        option.text = i;
+        heightSelectBox.appendChild(option);
+    }
+
+    var labelElement = document.createElement('label');
+    labelElement.innerHTML = "高さ";
+
+    heightSelectBox.appendChild(labelElement);
+    inputForm.appendChild(heightSelectBox);
+    heatMapForm.appendChild(inputForm);
+
+    $('select').formSelect();
+
+
+    var heatMapButton = document.getElementById("heat-map-import-button");
+    if (heatMapButton.hasChildNodes()) {
+        heatMapButton.removeChild(heatMapButton.lastChild);
+    } else {
+        heatMapButton.innerHTML = "";
+    }
+    var rowElement = document.createElement("div");
+    rowElement.className = "row";
+    var renderHeatMapButton = document.createElement("a");
+    renderHeatMapButton.id = "renderHeatMap";
+    renderHeatMapButton.className = "waves-effect waves-light btn-large blue";
+
+    var buttonTextContent = document.createElement("h5");
+    buttonTextContent.textContent = "出力";
+
+    renderHeatMapButton.appendChild(buttonTextContent);
+
+    rowElement.appendChild(renderHeatMapButton);
+
+    heatMapButton.appendChild(rowElement);
+    //let heatMapButton = document.getElementById('renderHeatMap');
+    heatMapButton.addEventListener('click', initRenderHeatMap);
+
+}
+
 
 /* フォームから高さを取得する関数
  */
 function getHeight() {
-    targetHeight = document.getElementById('heatmap-height').value;
+    targetHeight = controlForm.getSelectedValue("heatmap-height-select-box");
 }
 
 /* 初期の空間情報の設定を行う関数
@@ -74,9 +185,9 @@ function getHeight() {
  * width: 空間内のx軸（幅）の値
  */
 function initSpaceSetting() {
-    depth = layoutData[0]['layout'].length;
-    height = layoutData[0]['layout'][0].length;
-    width = layoutData[0]['layout'][0][0].length;
+    depth = layoutData['layout'].length;
+    height = layoutData['layout'][0].length;
+    width = layoutData['layout'][0][0].length;
 }
 
 /* Canvas内のクリックした座標を算出する関数
@@ -94,8 +205,9 @@ function getCoordinateInCanvas() {
         const canvasX = Math.floor(viewX / scaleWidth),
             canvasY = Math.floor(viewY / scaleHeight);
 
-        // var renderCoordinate = document.getElementById(this.canvas2dLayoutCoordinateId);
-        // renderCoordinate.innerHTML = `x座標: ${Math.floor(canvasX/sparse)} y座標: ${Math.floor(canvasY/sparse)} z座標: ${Math.floor(this.floor)}`;
+        var renderCoordinate = document.getElementById("heatmap-coordinate");
+        var heatMapHeight = controlForm.getSelectedValue("heatmap-height-select-box");
+        renderCoordinate.innerHTML = `x座標: ${Math.floor(canvasX/sparse)} y座標: ${Math.floor(canvasY/sparse)} z座標: ${Math.floor(heatMapHeight)}`;
     })
 }
 
@@ -134,7 +246,6 @@ function settingTemperatureColor(temp, nowDataArr) {
 /* 1分の温度データをヒートマップへ出力する関数
  */
 function renderHeatMapData(nowData, nowDataArr) {
-    console.log(nowData);
     for (var i = 0; i < nowData.length; i++) {
         var agent = nowData[i];
         var x = agent['x'];
@@ -204,7 +315,6 @@ function nextStepHeatMap() {
         initSlideBarTimeSetting();
     } else {
         var nowData = simulationData[index]['agent_list'];
-        console.log(nowData);
         nowTime = simulationData[index]['timestamp'];
         var nowDataArr = new Array();
         for (var i = 0; i < nowData.length; i++) {
@@ -266,12 +376,13 @@ function stopHeatMap() {
 function allRenderDataHeatMap() {
     // 全てを再生するメソッド
     exec = true;
-    heatmapProcess = setInterval(nextStepHeatMap, 100);
+    heatmapProcess = setInterval(nextStepHeatMap, 200);
     var playButton = document.getElementById('play-heatmap-button');
     playButton.className = "disabled btn-floating btn-large waves-effect waves-light blue"
     var stopButton = document.getElementById('stop-heatmap-button');
     stopButton.className = "btn-floating btn-large waves-effect waves-light blue"
 }
+
 
 /* ヒートマップ読み込み時にはじめに実行する関数
  */
@@ -279,12 +390,13 @@ async function initRenderHeatMap() {
     var res = await eel.config_import()();
     var output_folder_path = res[7];
     var layoutFilePath = res[4];
-    simulationData = await eel.open_json(output_folder_path)();
-    layoutData = await eel.open_layout_json(layoutFilePath)();
+    simulationData = await eel.open_simulation_data_json(output_folder_path, floor)();
+    layoutData = await eel.open_layout_json(layoutFilePath, floor)();
     getHeight();
     initSpaceSetting();
     initRenderHeatMapSetting();
     initSlideBarTimeSetting();
+    initGraphBox();
 }
 
 /*******************************************************************************/
@@ -438,230 +550,125 @@ function updateProgress() {
 }
 
 /*******************************************************************************/
-/* ヒートマップ出力                                                            */
-/*******************************************************************************/
-
-async function print_heatmap() {
-    var res = await eel.config_import()();
-    var output_folder_path = res[7];
-    console.log(output_folder_path);
-    if (json_data_flag == false) {
-        await eel.open_json(output_folder_path)();
-        json_data_flag = true;
-    }
-    var number = 0;
-    var data = await eel.import_result_data(number)();
-    const aryMax = function(a, b) { return Math.max(a, b); }
-        //const aryMin = function (a, b) {return Math.min(a, b);}
-    var yMax = data[1].reduce(aryMax);
-
-    for (let i = 0; i < data[1].length; i++) {
-        data[1][i] = Math.abs(data[1][i] - yMax);
-    }
-    console.log(yMax);
-    console.log(data[0]);
-    console.log(data[1]);
-
-    heatmap();
-}
-
-async function previous_heatmap() {
-    if (number != 0) {
-        number = number - 1;
-    }
-    data = await eel.import_result_data(number)();
-    const aryMax = function(a, b) { return Math.max(a, b); }
-        //const aryMin = function (a, b) {return Math.min(a, b);}
-    yMax = data[1].reduce(aryMax);
-
-    for (let i = 0; i < data[1].length; i++) {
-        data[1][i] = Math.abs(data[1][i] - yMax);
-    }
-    console.log(data[0]);
-    console.log(data[1]);
-
-    heatmap();
-}
-
-async function next_heatmap() {
-    number = number + 1;
-    data = await eel.import_result_data(number)();
-    const aryMax = function(a, b) { return Math.max(a, b); }
-        //const aryMin = function (a, b) {return Math.min(a, b);}
-    yMax = data[1].reduce(aryMax);
-
-    for (let i = 0; i < data[1].length; i++) {
-        data[1][i] = Math.abs(data[1][i] - yMax);
-    }
-    if (data.length == 0) {
-        updateHeatmap = false;
-        clearInterval(interval);
-    } else {
-        heatmap();
-    }
-    // console.log(data[0]);
-    console.log("aiueo");
-    // console.log(data[1]);
-}
-
-async function movie_heatmap() {
-    console.log('動画再生');
-    updateHeatmap = true;
-    interval = setInterval("next_heatmap()", 500);
-}
-
-
-function heatmap() {
-    console.log("ヒートマップ作成開始")
-
-    var heatmapInstance = h337.create({
-        container: document.getElementById("heatmap")
-    });
-
-    // now generate some random data
-    var points = [];
-    var max = 0;
-    var min = 100;
-    //var width = 30;
-    //var height = 9;
-    //var len = 252;
-
-    console.log("データ作成中");
-    console.log(data[0][0]);
-    console.log(data[0].length);
-
-    // for(var i=0; i<3;i++){
-    //   if(document.heatmap_z_select.height[i].checked){
-
-    //     var heatmap_z = document.heatmap_z_select.height[i].value;
-    //   }
-    // }
-    var heatmap_z = Number(document.getElementById("heatmap-height").value);
-    //var heatmap_z = document.getElementById("heatmap_z");
-
-    for (let i = 0; i <= data[0].length; i++) {
-        if (data[2][i] == heatmap_z) {
-            max = Math.max(max, data[3][i]);
-            min = Math.min(min, data[3][i]);
-            var point = {
-                x: data[0][i] * 30,
-                y: data[1][i] * 30,
-                value: data[3][i]
-            }
-            points.push(point);
-        }
-    }
-    console.log(points);
-    console.log("データ作成完了")
-
-    // heatmap data format
-    var data1 = {
-        // max: data[5], 
-        // min: data[4],
-        max: 27,
-        min: 20,
-        data: points
-    };
-    // if you have a set of datapoints always use setData instead of addData
-    // for data initialization
-    // heatmapInstance.setData(data);
-    heatmapInstance.setData(data1);
-    heatmapInstance.repaint();
-    console.log("ヒートマップ作成完了")
-}
-/*
-【スライドバーの反映】
-  ＊最初の読み込み時に時間の開始～終了のみ取得
-  ＊全体の長さにスライドバーの進捗の割合をかけてnumberに反映させてonchagneでheatmap関数を呼び出す
-【一時停止】
-　＊動画再生中のみ実行できる
-　＊setIntervalを停止する
-【5分後、5分前に移動】
-　＊number = number + 5によって制御　out of indexの場合は最後/最初に移動する
-【最初に戻る】
-　＊numberを0に初期化してヒートマップを動かす
-*/
-/*******************************************************************************/
 /* グラフ出力                                                                  */
 /*******************************************************************************/
-function renderCoordinate(index) {
-    x = document.getElementById(`graph_x_${index}`).value;
-    y = document.getElementById(`graph_y_${index}`).value;
-    z = document.getElementById(`graph_z_${index}`).value;
-    console.log(index, x, y, z);
+function initGraphBox() {
+    var ulGraphBox = document.getElementById('graph-box');
+    var graphBoxNum = ulGraphBox.childElementCount;
+    if (graphBoxNum > 0) {
+        while (ulGraphBox.firstChild) {
+            ulGraphBox.removeChild(ulGraphBox.firstChild)
+        }
+    }
+    var liElementInit = `
+    <li id="graph-box-list-0">
+        <div id="graph-box-header-0" class="collapsible-header">
+            グラフポイント
+        </div>
+        <div class="collapsible-body">
+            <div class="row">
+                <div class="col s12 m2 l4">
+                    <label>x座標</label><br>
+                    <input type="text" id="graph_x_0" placeholder="x座標">
+                </div>
+                <div class="col s12 m2 l4">
+                    <label>y座標</label><br>
+                    <input type="text" id="graph_y_0" placeholder="y座標"><br>
+                </div>
+                <div class="col s12 m2 l4">
+                    <label>z座標</label><br>
+                    <input type="text" id="graph_z_0" placeholder="z座標"><br>
+                </div>
+              <a id="print-graph-button" class="waves-effect waves-light btn blue">グラフ表示</a>
+            </div>
+            <canvas id="graph_0"></canvas>
+        </div>
+    </li>`;
+    ulGraphBox.innerHTML = liElementInit;
 
-    console.log(index);
-    target = document.getElementById(`graph-box-header-${index}`);
+    var graphSet = document.getElementById("graph-box-form");
+    if (graphSet.childElementCount > 1) {
+        graphSet.removeChild(graphSet.lastChild);
+    }
+    var addButton = document.createElement("add-graph-box");
+    addButton.className = "btn-floating btn-large waves-effect waves-light blue";
+    addButton.id = "add-graph-box-button";
+    var iconAddButton = document.createElement("i");
+    iconAddButton.className = "material-icons";
+    iconAddButton.textContent = "add";
+    addButton.appendChild(iconAddButton);
+
+    addButton.addEventListener('click', createGraphBox);
+    graphSet.appendChild(addButton);
+
+    var initGraph = document.getElementById("graph_0");
+    initGraph.setAttribute("width", 200);
+    initGraph.setAttribute("height", 200);
+    // graphIdArray.push(graphIndex);
+
+    var printGraphButton = document.getElementById("print-graph-button");
+    printGraphButton.addEventListener('click', { graphIndex: 0, handleEvent: outputGraph });
+
+}
+
+function renderCoordinate(graphIndex) {
+    var x = document.getElementById(`graph_x_${graphIndex}`).value;
+    var y = document.getElementById(`graph_y_${graphIndex}`).value;
+    var z = document.getElementById(`graph_z_${graphIndex}`).value;
+    console.log(graphIndex, x, y, z);
+
+    var target = document.getElementById(`graph-box-header-${graphIndex}`);
     target.innerHTML = `グラフポイント(${x},${y},${z})`;
 }
 
 
-async function print_graph(index) {
-    renderCoordinate(index);
+async function outputGraph() {
+    renderCoordinate(this.graphIndex);
     var res = await eel.config_import()();
     output_folder_path = res[7];
-    console.log(output_folder_path);
 
-    x = document.getElementById(`graph_x_${index}`).value;
-    y = document.getElementById(`graph_y_${index}`).value;
-    z = document.getElementById(`graph_z_${index}`).value;
+    var dataSpan = 10;
+    var x = document.getElementById(`graph_x_${this.graphIndex}`).value;
+    var y = document.getElementById(`graph_y_${this.graphIndex}`).value;
+    var z = document.getElementById(`graph_z_${this.graphIndex}`).value;
 
-    //yMax = data[1].reduce(aryMax);
-
-    if (json_data_flag == false) {
-        await eel.open_json(output_folder_path)();
-        json_data_flag = true;
+    var labels = new Array();
+    var tempDataSet = new Array();
+    for (var i = 0; i < simulationData.length; i++) {
+        labels.push(simulationData[i]['timestamp']);
+        var agentList = simulationData[i]['agent_list'];
+        for (var j = 0; j < agentList.length; j++) {
+            if (agentList[j]["class"] == "space" && agentList[j]['x'] == x && agentList[j]['y'] == y && agentList[j]['z'] == z) {
+                tempDataSet.push(agentList[j]['temp']);
+            }
+        }
     }
 
-    number = 0;
-    data = await eel.import_result_data(number)();
-
-
-    //yMax = 26
-    const aryMax = function(a, b) { return Math.max(a, b); }
-    yMax = data[1].reduce(aryMax)
-    y = Math.abs(y - yMax);
-
-    console.log(x, y, z)
-
-    allData = await eel.import_result_data_for_graph(output_folder_path, x, y, z)()
-    data_for_graph = allData[0];
-    //data_for_graph.reverse();
-    maxData = allData[1];
-    minData = allData[2];
-    console.log(data_for_graph);
-
-
-    var ctx = document.getElementById(`graph_${index}`);
-
-    dataSpan = Math.floor(data_for_graph.length / 10);
-    var labels = [];
-    var dataSet = [];
-    // if (data_for_graph.length < 10){
-    //   for(var i=0; i<data_for_graph.length; i++){
-    //     labels.push(i);
-    //   }
-    // } else{
-    //   for(var i=0; i<=10; i++){
-    //     labels.push(i*dataSpan);
-    //     dataSet.push(data_for_graph[i*dataSpan]);
-    //   }
-    // }
-    for (i = 0; i < data_for_graph.length; i++) {
-        labels.push(i);
+    var adjustLabels = new Array();
+    var adjustTempData = new Array();
+    if (labels.length > 10) {
+        for (var i = 0; i < labels.length; i++) {
+            if (i % dataSpan == 0) {
+                adjustLabels.push(labels[i]);
+                adjustTempData.push(tempDataSet[i]);
+            }
+        }
     }
+    console.log(labels);
+    console.log(tempDataSet);
 
-    console.log(dataSet);
+    var ctx = document.getElementById(`graph_${this.graphIndex}`);
+
     var data = {
         labels: labels,
         datasets: [{
             label: '同一地点の時間による温度変化',
-            data: data_for_graph,
-            // borderColor: 'rgba(255, 100, 100, 1)',
+            data: tempDataSet,
             borderColor: '#2196F3',
             lineTension: 0,
             fill: false,
-            borderWidth: 3
+            borderWidth: 1,
+            pointRadius: 1
         }]
     };
 
@@ -669,8 +676,8 @@ async function print_graph(index) {
         scales: {
             yAxes: [{
                 ticks: {
-                    min: minData,
-                    max: maxData
+                    min: 20,
+                    max: 30
                         //beginAtZero: true
                 }
             }]
@@ -690,18 +697,18 @@ var instance = M.Collapsible.init(elem, {
     accordion: false
 });
 
-function removeGraphBox(elem) {
+function removeGraphBox() {
     // listGraphBox = document.getElementById(`graph-box-list-${elem}`);  
-    $(`#graph-box-list-${elem}`).hide('slow', function() { $(`#graph-box-list-${elem}`).remove(); });
+    $(`#graph-box-list-${this.graphIndex}`).hide('slow', function() { $(`#graph-box-list-${this.graphIndex}`).remove(); });
     // listGraphBox.remove();
 }
 
 function createOneCoordinateInput(elem) {
-    graphBoxBodyX = document.createElement("div");
+    var graphBoxBodyX = document.createElement("div");
     graphBoxBodyX.className = "col s12 m2 l4";
     graphBoxBodyX.innerHTML = `<label>${elem}座標</label><br>`;
 
-    graphBoxBodyXInput = document.createElement("input");
+    var graphBoxBodyXInput = document.createElement("input");
     graphBoxBodyXInput.type = "text";
     graphBoxBodyXInput.id = `graph_${elem}_${graphCurrentId}`;
     graphBoxBodyXInput.placeholder = `${elem}座標`;
@@ -713,40 +720,45 @@ function createOneCoordinateInput(elem) {
 
 function createGraphBox() {
     graphCurrentId += 1;
-    ulComponent = document.getElementById("graph-box");
-    listComponent = document.createElement("li");
+    var ulComponent = document.getElementById("graph-box");
+    var listComponent = document.createElement("li");
     listComponent.id = `graph-box-list-${graphCurrentId}`;
-    graphBoxHeader = document.createElement("div");
+    var graphBoxHeader = document.createElement("div");
 
     graphBoxHeader.className = "collapsible-header";
     graphBoxHeader.id = `graph-box-header-${graphCurrentId}`;
     graphBoxHeader.innerHTML = `グラフポイント`;
 
-    graphBoxBody = document.createElement("div");
+    var graphBoxBody = document.createElement("div");
     graphBoxBody.className = "collapsible-body";
-    graphBoxBodyRow = document.createElement("div");
+    var graphBoxBodyRow = document.createElement("div");
     graphBoxBodyRow.className = "row";
 
     graphBoxBodyRow.appendChild(createOneCoordinateInput("x"));
     graphBoxBodyRow.appendChild(createOneCoordinateInput("y"));
     graphBoxBodyRow.appendChild(createOneCoordinateInput("z"));
 
-    graphRenderButton = document.createElement("a");
+    var graphRenderButton = document.createElement("a");
     graphRenderButton.id = "print-graph-button";
-    graphRenderButton.setAttribute('onclick', `print_graph(${graphCurrentId});`);
-    graphRenderButton.className = "waves-effect waves-light btn-large blue";
-    graphRenderButton.innerHTML = "<h5>出力</h5>";
+    graphRenderButton.addEventListener('click', { graphIndex: graphCurrentId, handleEvent: outputGraph })
+        //graphRenderButton.setAttribute('onclick', `outputGraph(${graphCurrentId});`);
+    graphRenderButton.className = "waves-effect waves-light btn blue";
+    graphRenderButton.innerHTML = "グラフ表示";
 
     graphBoxBodyRow.appendChild(graphRenderButton);
 
     graphBoxBody.appendChild(graphBoxBodyRow);
 
-    graphCanvas = document.createElement("canvas");
+    var graphCanvas = document.createElement("canvas");
     graphCanvas.id = `graph_${graphCurrentId}`;
-    graphRemoveButton = document.createElement("a");
-    graphRemoveButton.setAttribute('onclick', `removeGraphBox(${graphCurrentId})`);
+    graphCanvas.setAttribute("width", 200);
+    graphCanvas.setAttribute("height", 200);
+
+    var graphRemoveButton = document.createElement("a");
+    graphRemoveButton.addEventListener('click', { graphIndex: graphCurrentId, handleEvent: removeGraphBox });
+    //graphRemoveButton.setAttribute('onclick', `removeGraphBox(${graphCurrentId})`);
     graphRemoveButton.className = "waves-effect waves-light btn red darken-1";
-    graphRemoveButtonIcon = document.createElement("i");
+    var graphRemoveButtonIcon = document.createElement("i");
     graphRemoveButtonIcon.className = "material-icons left";
     graphRemoveButtonIcon.innerHTML = "delete";
     graphRemoveButton.appendChild(graphRemoveButtonIcon);

@@ -59,6 +59,7 @@ export default class ControlEvaluation {
 
     createGraph(x, y_data, id) {
         var ctx = document.getElementById(id);
+        ctx.style = "position: relative; height:40vh; width:80vw";
         var labels = x;
 
         var data = {
@@ -69,7 +70,7 @@ export default class ControlEvaluation {
                     borderColor: '#2196F3',
                     lineTension: 0,
                     fill: false,
-                    borderWidth: 3
+                    pointRadius: 1
                 },
                 {
                     label: '実測値',
@@ -77,7 +78,7 @@ export default class ControlEvaluation {
                     borderColor: '#26a69a',
                     lineTension: 0,
                     fill: false,
-                    borderWidth: 3
+                    pointRadius: 1
                 },
             ]
         };
@@ -90,7 +91,8 @@ export default class ControlEvaluation {
             scales: {
                 y: {
                     min: 18.0,
-                    max: 30.0
+                    max: 30.0,
+                    stepsize: 5
                 }
             }
         };
@@ -118,6 +120,7 @@ export default class ControlEvaluation {
                 ulElement.removeChild(ulElement.lastChild);
             }
         }
+        // console.log(data);
         var temp_data = data.temp;
         var x_data = data.time;
 
@@ -131,7 +134,7 @@ export default class ControlEvaluation {
             var liCanvasElement = document.createElement('canvas');
             var canvasId = `li-body-${id}-${i}`
             liCanvasElement.setAttribute("width", 1000);
-            liCanvasElement.setAttribute("height", 150);
+            liCanvasElement.setAttribute("height", 500);
             liCanvasElement.id = canvasId;
             liBodyElement.appendChild(liCanvasElement);
             liElement.appendChild(liHeaderElement);

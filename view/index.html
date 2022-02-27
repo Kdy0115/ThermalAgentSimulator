@@ -23,15 +23,7 @@
                           <div id="one-row" class="col s12 m6 l6">
                             <label>シミュレーション終了日時</label><br>
                             <input type="datetime-local" id="finish_time" class="config-input" placeholder="5桁以内で入力"><br>
-                          </div>
-                          <div class="col s12 m1 l12">
-                            <div class="input-field">
-                              <select id="simulation-floor" class="config-input">
-                                <option value="" disabled selected>Choose your option</option>
-                              </select>
-                              <label>シミュレーション対象フロアの選択</label>
-                            </div>
-                          </div>                          
+                          </div>                         
                           <div id="second-row" class="col s12 m1 l12">
                             <label>出力先フォルダのパスを入力</label><br>
                             <input type="text" id="output_folder_path" class="config-input" maxlength="100" value="C:/" placeholder="100文字以内で入力"><br>
@@ -108,13 +100,15 @@
                                       <option value="" disabled selected>Choose your option</option>
                                     </select>
                                     <label>熱源データ</label>
-                                </div>                      
+                                </div>      
+                                <!--                
                                 <div class="input-field">
                                     <select id="floor-view-files-select-box">
                                       <option value="" disabled selected>Choose your option</option>
                                     </select>
                                     <label>フロアの選択</label>
                                 </div>                                                                          
+                                -->
                                 <div class="input-field">
                                     <select id="position-view-files-select-box">
                                       <option value="" selected>Choose your option</option>
@@ -125,6 +119,7 @@
                                 <div class="row">
                                     <a id="read-layout-button" class="waves-effect waves-light btn-large blue"><h5>読み込み</h5></a>
                                 </div>
+                                <div id="layout-3d-form-floor"></div>
                             </div>
                             <div id="preview-3d-image">
                                 <canvas id='layout-3d'></canvas>

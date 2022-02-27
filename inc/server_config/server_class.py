@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 # pylib
+from http.client import NETWORK_AUTHENTICATION_REQUIRED
 import pandas as pd
 from datetime import datetime as dt
+import datetime
 import statistics
 import re
 from sklearn.metrics import mean_absolute_error,r2_score,mean_squared_error
@@ -61,9 +63,10 @@ class EvaluationController():
         ＊BEMSデータ評価用の操作メソッド
         ＊温度取りデータ評価用の操作メソッド
     """    
-    def __init__(self, bems_all_data_file_path : str, measurement_all_data_file_path : str):
+    def __init__(self, bems_all_data_file_path : str, measurement_all_data_file_path : str, floor: int):
         # BEMSデータと温度取りデータをプール場所から取得
         self.df_bems = pd.read_csv(bems_all_data_file_path,encoding="shift-jis")
+        self.df_bems = self.df_bems.filter(regex='({}f|時間|外気温)'.format(floor),axis=1)
         self.df_measure = pd.read_csv(measurement_all_data_file_path,encoding="shift-jis")
         time_arr = list(self.df_measure["時間"].values)
         new_time_arr = []
@@ -90,10 +93,23 @@ class EvaluationController():
                 df_new_columns.append(i+"_予測")
                 columns.append(i)
             # 設定温度のみを抽出
-            elif "設定温度" in i:
-                setting_columns.append(i)
+            # elif "設定温度" in i:
+            #     setting_columns.append(i)
 
-        return df_new_columns,columns,setting_columns
+        return df_new_columns,columns
+        # return df_new_columns,columns,setting_columns
+            
+    def _format_time_data(self,arr):
+        format_time_arr = []
+        for one in arr:
+            f_base_time = one.split(' ')
+            f_date_arr = f_base_time[0].split('/')
+            f_time = f_base_time[1].split(':')
+            f_date_time = datetime.datetime(int(f_date_arr[0]),int(f_date_arr[1]),int(f_date_arr[2]),int(f_time[0]),int(f_time[1]),0)
+            f_date_time.strftime('%Y-%m-%d %H:%M:%S')
+            format_time_arr.append(f_date_time)
+            
+        return format_time_arr
     
     def create_inahalation_temp_evaluation(self, df_simulation):
         """ BEMSにおける吸い込み温度で評価用データを作成するメソッド
@@ -104,18 +120,19 @@ class EvaluationController():
         Returns:
             inhalation_evaluation_data [dict]: JS描画用誠整形したファイルデータ
         """        
-        floor = "5"
         time = df_simulation.iloc[0]['時間']
         df_time = dt.strptime(time, '%Y-%m-%d %H:%M:%S')
-        df_simulation.columns,extract_columns,setting_columns = self._rename_columns(self.df_bems)
+        
+        self.df_bems["時間"] = self._format_time_data(list(self.df_bems['時間'].values))
+        df_simulation['時間'] = pd.to_datetime(df_simulation["時間"])
+
+        df_simulation.columns,extract_columns = self._rename_columns(self.df_bems)
         df_merge = pd.merge(self.df_bems, df_simulation, on="時間", how="right")
-        try:
-            df_merge['外気温'] = self.df_bems['外気温'].values
-        except ValueError:
-            df_merge['外気温'] = 0
+
+        time_arr = list(df_merge['時間'].astype('str').values)
             
         inhalation_evaluation_data = {
-            'time': list(df_merge['時間'].values),
+            'time': time_arr,
             'temp':[]
         }
         

@@ -674,7 +674,7 @@ class HeatModel(Model):
         self.init_set_temp_method = 1
 
         self.layout_data = layout_data["layout"]
-        self.source_data = source_data["data"]
+        self.source_data = source_data
         self.ac_position = layout_data["ac"]
         self.init_ac_coordinate_arr = []
 
@@ -684,7 +684,7 @@ class HeatModel(Model):
         self.control_data = control_data
         self.current_control_data = next(self.control_data)
         
-        self.all_bems_data = init_bems_data["bems_data"]
+        self.all_bems_data = init_bems_data
         
         self.remove_agents_set = set()
         
@@ -707,6 +707,7 @@ class HeatModel(Model):
         self.out_temp = self.init_bems_data['外気温']
         bems_data_temp_arr = []
         
+        print(self.init_bems_data)
         for key,value in self.init_bems_data.items():
             if '吸込温度' in key:
                 bems_data_temp_arr.append(value)

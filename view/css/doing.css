@@ -41,3 +41,24 @@
 #date-heatmap-text {
     margin-bottom: -2%;
 }
+
+#renderHeatMap {
+    margin-left: 83.5%;
+}
+
+#play-heatmap-button {
+    margin-left: 40%;
+}
+
+#stop-heatmap-button {
+    margin-left: 50%;
+    margin-top: -11.5%;
+}
+
+#print-graph-button {
+    margin-left: 70%;
+}
+
+#add-graph-box-button {
+    margin-left: 45%;
+}
