@@ -149,25 +149,28 @@ function changeFloor() {
     sourceDataSet = controlForm.getElementSpecificCondition(allLayoutData[1], floor, "floor");
     observeDataSet = allLayoutData[2];
 
-    for (var i = 0; i < layoutDataSet['layout'].length; i++) {
-        layoutDataSet['layout'][i].reverse();
-        var y_max = layoutDataSet['layout'][i].length;
-    }
+    /* 描画時の反転を行う処理
+     * y軸が反転される
+     */
+    // for (var i = 0; i < layoutDataSet['layout'].length; i++) {
+    //     layoutDataSet['layout'][i].reverse();
+    //     var y_max = layoutDataSet['layout'][i].length;
+    // }
 
-    console.log(sourceDataSet);
-    for (var i = 0; i < sourceDataSet['data'].length; i++) {
-        sourceDataSet['data'][i]['y'] = (y_max - 1) - sourceDataSet['data'][i]['y'];
-    }
+    // console.log(sourceDataSet);
+    // for (var i = 0; i < sourceDataSet['data'].length; i++) {
+    //     sourceDataSet['data'][i]['y'] = (y_max - 1) - sourceDataSet['data'][i]['y'];
+    // }
 
-    for (var i = 0; i < layoutDataSet['ac'].length; i++) {
-        layoutDataSet['ac'][i]['y'] = (y_max - 1) - layoutDataSet['ac'][i]['y'];
-    }
+    // for (var i = 0; i < layoutDataSet['ac'].length; i++) {
+    //     layoutDataSet['ac'][i]['y'] = (y_max - 1) - layoutDataSet['ac'][i]['y'];
+    // }
 
-    if (observeDataSet != null) {
-        for (var i = 0; i < observeDataSet.length; i++) {
-            observeDataSet[i]['y'] = (y_max - 1) - observeDataSet[i]['y'];
-        }
-    }
+    // if (observeDataSet != null) {
+    //     for (var i = 0; i < observeDataSet.length; i++) {
+    //         observeDataSet[i]['y'] = (y_max - 1) - observeDataSet[i]['y'];
+    //     }
+    // }
     control3dLayout.renderFigure3dLayout(layoutDataSet, sourceDataSet, observeDataSet, -1);
     createSelectboxFor2dLayout(allLayoutData[0]);
 }

@@ -30,16 +30,26 @@ from controllers import error
 
 
 # エージェント種別識別用タグ
+# レイアウトファイルのエージェント番号に対応しています
+# 何もないエージェント
 NOT_AGENT_KIND           = 0
+# 空間エージェント
 HEAT_KIND_SPACE          = 1
+# 窓エージェント
 HEAT_SOURCE_KIND_WINDOW  = 2
+# 壁エージェント
 HEAT_SOURCE_KIND_BARRIER = 3
+# 床エージェント
 HEAT_SOURCE_KIND_FLOOR   = 4
+# 天井エージェント
 HEAT_SOURCE_KIND_CEILING = 5
+# 窓を開けた際のエージェント（窓＋空間を配置）
 HEAT_SOURCE_OUT_SPACE    = 6
+# 上記以外の熱源エージェント（設定が必要であれば）
 HEAT_SOURCE_KIND_OTHERS  = 7
 
 # シミュレーションBEMSデータ再設定間隔（分）
+# 一定時間ごとに熱源（壁、窓、床、天井）の温度をBEMSデータの吸込温度で再設定します。
 RESET_BEMS_DATA_SPAN = 30
 
 
@@ -549,6 +559,8 @@ class AirConditioner(Agent):
         self.release_temp = self.set_temp
 
     def _switch_thermo(self):
+        """ サーモの切り替えを行うメソッド
+        """        
         # neighbor_spaces = self.model.grid.get_neighbors(self.pos, 1, include_center=False)
         # space_temp_list = []
         # for space in neighbor_spaces:
@@ -566,12 +578,15 @@ class AirConditioner(Agent):
                 sys.exit(error.SPACE_DEFINITION_ERROR)
         else:
             observe_temp = self.nearest_space.temp
-            
+        # 冷房時
         if self.mode == 1:
+            # 吸込温度 - 設定温度 > 0.5であればサーモをONにする（プログラム上ではFalseに設定）
             if observe_temp - self.set_temp > 0.5:
                 self.thermo = False
+            # 吸込温度 - 設定温度 <= 0.5 であればサーモをOFFにする（プログラム上ではTrueに設定）
             else:
                 self.thermo = True
+        # 暖房時
         elif self.mode == 2:
             if self.set_temp - observe_temp > 0.5:
                 self.thermo = False
@@ -580,15 +595,25 @@ class AirConditioner(Agent):
         self.observe_temp = observe_temp
 
     def switch_mode(self):
+        """ サーモの状態に応じて運転モードを設定するメソッド
+        """        
+        # サーモの状態を更新
         self._switch_thermo()
+        # サーモOFFの場合（プログラム上ではTrueの場合）
         if self.thermo == True and self.mode != 0:
+            # 送風に設定（吹き出し温度＝吸い込み温度）
             self.release_temp = self.observe_temp
+            # 運転モードは送風に設定
             self.mode = 3
+        # サーモONの場合（プログラム上ではFalseの場合）
         else:
+            # 冷房
             if self.mode == 1:
                 self.release_temp = self.set_temp - 10
+            # 暖房
             elif self.mode == 2:
                 self.release_temp = self.set_temp + 20
+            # 送風
             elif self.mode == 3:
                 self.release_temp = self.observe_temp
 

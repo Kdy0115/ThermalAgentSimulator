@@ -121,8 +121,9 @@ class DataSet():
             data = csv.DictReader(f)
             per_time_data = next(data)
             per_time_data["時間"] = functions.to_standard_format(per_time_data["時間"])
-            
+            num = 0
             while True:
+                num += 1
                 if per_time_data["時間"] == self.simulation_start_time:
                     append_flag = True
                 if append_flag:
