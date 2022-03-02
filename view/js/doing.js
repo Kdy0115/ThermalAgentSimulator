@@ -54,6 +54,7 @@ var height;
 var width;
 var dataLength;
 var targetHeight;
+var legendX = 0;
 
 // var nowData;
 var nowTime;
@@ -72,6 +73,7 @@ initHeatMapImportFile();
  */
 async function initHeatMapImportFile() {
     var floorArray = await eel.import_output_folder_floor("")();
+    console.log(floorArray);
     var heatMapDescription = document.getElementById("heat-map-description");
     if (floorArray.length < 1) {
         heatMapDescription.innerHTML = "シミュレーション結果が存在していません。シミュレーションを実行してください。";
@@ -80,6 +82,9 @@ async function initHeatMapImportFile() {
     }
 
     var heatMapForm = document.getElementById("heatmap-form");
+    if (heatMapForm.childElementCount > 0) {
+        heatMapForm.removeChild(heatMapForm.lastChild);
+    }
     var inputForm = document.createElement("div");
     inputForm.className = "input-field";
     var floorSelectBox = document.createElement('select');
@@ -238,9 +243,25 @@ function settingTemperatureColor(temp, nowDataArr) {
     }
 
     var colorRGBRatio = oneTempGap / allTempGap;
-    var colorRGBArr = tempToColor.colorBarRGB(colorRGBRatio);
+    // var colorRGBArr = tempToColor.colorBarRGB(colorRGBRatio);
 
-    return colorRGBArr;
+    return colorRGBRatio;
+    // return colorRGBArr;
+}
+
+function initRenderColorLegend() {
+    ctx.fillStyle = 'rgba(0, 0, 0)';
+    ctx.font = '12pt Arial';
+    ctx.fillText("低", (legendX + 3.5) * sparse, sparse * height);
+    ctx.fillStyle = 'rgba(0, 0, 0)';
+    ctx.font = '12pt Arial';
+    ctx.fillText("高", (legendX + 3.5) * sparse, sparse * 2);
+    for (var i = 1; i < height; i++) {
+        ctx.clearRect((legendX + 2) * sparse, i * sparse, sparse, sparse);
+        var value = i / height;
+        ctx.fillStyle = `rgb(255, 0, 0, ${1-value})`;
+        ctx.fillRect((legendX + 2) * sparse, i * sparse, sparse, sparse);
+    }
 }
 
 /* 1分の温度データをヒートマップへ出力する関数
@@ -251,15 +272,20 @@ function renderHeatMapData(nowData, nowDataArr) {
         var x = agent['x'];
         var y = agent['y'];
         var z = agent['z'];
+        if (legendX < x) {
+            legendX = x;
+        }
         if (agent['class'] == "space" && z == targetHeight) {
             ctx.clearRect(x * sparse, y * sparse, sparse, sparse);
             var rgbArr = settingTemperatureColor(agent['temp'], nowDataArr);
-            var red = rgbArr[0]
-            var green = rgbArr[1]
-            var blue = rgbArr[2]
+            //var red = rgbArr[0]
+            //var green = rgbArr[1]
+            //var blue = rgbArr[2]
 
-            ctx.fillStyle = `rgb(${red}, ${green}, ${blue}, 0.75)`;
+            //ctx.fillStyle = `rgb(${red}, ${green}, ${blue}, 0.75)`;
+            ctx.fillStyle = `rgb(255, 0, 0, ${rgbArr})`;
             ctx.fillRect(x * sparse, y * sparse, sparse, sparse);
+            console.log(x * sparse, y * sparse, sparse);
             ctx.fill();
         }
     }
@@ -297,11 +323,12 @@ function initRenderHeatMapSetting() {
     cs.width = edge;
     cs.height = edge;
 
-    sparse = edge / maxLength;
+    sparse = edge / (maxLength + 3);
     //cs.height = spaceHeight;
 
     getCoordinateInCanvas();
     renderHeatMapData(nowData, nowDataArr);
+    initRenderColorLegend();
 }
 
 /* 1分後のヒートマップを出力する関数
@@ -490,6 +517,7 @@ async function updateSimulationStatus() {
         setTimeout(function() {
             simulationStatus = 0;
             updateSimulationStatus();
+            initHeatMapImportFile();
         }, 3000);
     }
 }
