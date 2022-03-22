@@ -49,6 +49,9 @@ HEAT_SOURCE_OUT_SPACE    = 6
 HEAT_SOURCE_KIND_OTHERS  = 7
 
 # シミュレーションBEMSデータ再設定間隔（分）
+# 再設定を行わない場合 -> 0
+# 再設定を行う場合     -> 1
+RESET_BEMS_DATA = 0
 # 一定時間ごとに熱源（壁、窓、床、天井）の温度をBEMSデータの吸込温度で再設定します。
 RESET_BEMS_DATA_SPAN = 30
 
@@ -643,7 +646,6 @@ class AirConditioner(Agent):
             self.read_control_data()
             self.switch_mode()
             # if self.mode != 0:
-            # self.see_class()
         self.create_heat()
         self.output_ac_data()
 
@@ -1019,7 +1021,7 @@ class HeatModel(Model):
             self.per_time_dic["agent_list"] = []
             self.schedule.step()
             # 00:00:00のときで1回以上のシミュレーション回数のときは空間を再初期化
-            if (self.time.hour == 0) and (self.time.minute == 0) and (self.time.second == 0) and (self.schedule.steps > 1):
+            if (self.time.hour == 0) and (self.time.minute == 0) and (self.time.second == 0) and (self.schedule.steps > 1 and RESET_BEMS_DATA == 1):
                 self._reset_agent_temp("Space")
                 print("00:00:00になったので温度の最初期化を行います")
             if self.time.second == 0:
